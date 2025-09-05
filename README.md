@@ -93,6 +93,3 @@ By signing below, each team member agrees to abide by the terms of this contract
 |                   |                 |            |
 
 ---
-
-*Please fill in meeting times, communication platforms, and team member names/signatures as appropriate for your group.*
-````It looks like you want to commit and push the README file we created. To proceed, I need the repository name (under your account JonCGroberg) where you'd like this README.md to be added.
