@@ -5,9 +5,11 @@
 **Overall Objectives:**  
 Our team aims to develop a machine learning (ML) program capable of processing and learning from provided texts related to history and literature. The end product will include a user-friendly website frontend that displays and interacts with this curated information.
 
-Additional details and documents can be found here:  
-[Project Google Doc](https://docs.google.com/document/d/1HU5PNYD8z_Wzx6vONrB9GvUc7qkXME4gnrfXbqMdZUI/edit?usp=sharing)
+### Relevant Docs
 
+- [Meeting Notes](https://docs.google.com/document/d/1zTYazFBrUcNKSXYYG3Sil48KUg2LX25lfew50AlFTLI/edit?tab=t.0)
+- [Contract](https://docs.google.com/document/d/1HU5PNYD8z_Wzx6vONrB9GvUc7qkXME4gnrfXbqMdZUI/edit?tab=t.0)
+- [Proposal](https://docs.google.com/document/d/1VOufFqSP2i1Cwe3wolJzSFsuPW4WJDnXQBxCUmPc7Qw/edit?tab=t.0)
 ---
 
 ## Individual Responsibilities
