@@ -75,14 +75,14 @@ You can also deploy manually by:
 
 1. **Build Failures**: Check that all dependencies are properly installed and the build command works locally
 2. **Authentication Errors**: Verify that all Vercel secrets are correctly set in GitHub
-3. **Path Issues**: Ensure the working directory is set to `./frontend` in the workflow
+3. **Path Issues**: Ensure the working directory is set to `./services/frontend` in the workflow
 
 ### Local Testing
 
 Before deploying, test the build locally:
 
 ```bash
-cd frontend
+cd services/frontend
 pnpm install
 pnpm build
 ```
