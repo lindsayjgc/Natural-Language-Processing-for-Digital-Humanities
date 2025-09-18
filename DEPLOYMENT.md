@@ -15,7 +15,7 @@ This guide explains how to deploy the Next.js frontend to Vercel using GitHub Ac
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
 2. Click "New Project"
 3. Import your GitHub repository
-4. Set the **Root Directory** to `frontend`
+4. Set the **Root Directory** to `services/frontend`
 5. Configure the project settings:
    - Framework Preset: Next.js
    - Build Command: `pnpm build`
@@ -56,7 +56,7 @@ Add the following secrets to your GitHub repository:
 
 The GitHub Action workflow is configured in `.github/workflows/deploy-frontend.yml` and will:
 
-- Trigger on pushes to `main`/`master` branches when frontend files change
+- Trigger on pushes to `main and dev` branches when frontend files change
 - Install dependencies using pnpm
 - Build the Next.js application
 - Deploy to Vercel
