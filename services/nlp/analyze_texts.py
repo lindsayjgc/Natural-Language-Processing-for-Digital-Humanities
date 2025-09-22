@@ -67,7 +67,7 @@ def analyze_file(txt_path: Path, outdir: Path, ngram_ns, topn, sent_threshold, m
 
     (outdir / f"{tag}_doc_emotion_vertical.csv").write_text(vertical_text, encoding="utf-8")
 
-    print(f"NLP ✓ {txt_path.name}")
+    # print(f"NLP ✓ {txt_path.name}")
 
 def main():
     ap = argparse.ArgumentParser(description="Analyze clean .txt files: wordfreq, n-grams, POS, sentiment.")
