@@ -67,8 +67,6 @@ def analyze_file(txt_path: Path, outdir: Path, ngram_ns, topn, sent_threshold, m
 
     (outdir / f"{tag}_doc_emotion_vertical.csv").write_text(vertical_text, encoding="utf-8")
 
-    print("\n" + vertical_text)
-
     print(f"NLP ✓ {txt_path.name}")
 
 def main():
