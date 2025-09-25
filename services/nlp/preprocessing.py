@@ -2,18 +2,21 @@
 import re
 from collections import Counter
 
+# Try loading spaCy for advanced NLP (fast, reliable). Fallback to NLTK if unavailable.
 _SPACY_OK = False
 try:
     import spacy
     _nlp = spacy.load("en_core_web_sm", exclude=["parser", "ner", "textcat"])
+    # Add a basic sentence splitter if not already present
     if "sentencizer" not in _nlp.pipe_names:
         _nlp.add_pipe("sentencizer")
-    _nlp.max_length = 1_000_000_000
+    _nlp.max_length = 1_000_000_000  # Allow extremely long docs
     _SPACY_OK = True
 except Exception:
     _nlp = None
     _SPACY_OK = False
 
+# Ensure required NLTK resources are available
 import nltk
 for pkg, locator in [
     ("punkt", "tokenizers/punkt"),
@@ -27,6 +30,7 @@ for pkg, locator in [
     except LookupError:
         nltk.download(pkg, quiet=True)
 
+# Common NLTK helpers
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk import pos_tag
@@ -35,21 +39,24 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 _STOPWORDS = set(stopwords.words("english"))
 _WORDNET_LEM = WordNetLemmatizer()
 
+# Convert Penn Treebank POS tags to WordNet-style
 def _wn_pos(treebank_tag: str):
     tag = treebank_tag[:1].upper()
     return {'J':'a','N':'n','V':'v','R':'r'}.get(tag, 'n')
 
+# Utility to clean tokens
 def words_from_tokens(tokens, *, lowercase=True, remove_punct=True, remove_nums=True):
     out = []
     for t in tokens:
         w = t.lower() if lowercase else t
-        if remove_punct and re.fullmatch(r"\W+", w):
+        if remove_punct and re.fullmatch(r"\W+", w):  # remove punctuation
             continue
-        if remove_nums and re.fullmatch(r"\d+([.,]\d+)?", w):
+        if remove_nums and re.fullmatch(r"\d+([.,]\d+)?", w):  # remove numbers
             continue
         out.append(w)
     return out
 
+# Main spaCy streaming pipeline (handles chunking for large texts)
 def _spacy_stream(text: str,
                   *,
                   lowercase=True,
@@ -64,17 +71,20 @@ def _spacy_stream(text: str,
     lemmas = []
     pos_seq = []
 
+    # Split text into chunks (avoids memory errors on huge inputs)
     if not chunk_chars or chunk_chars <= 0:
-        chunks = [text]  # single pass (you asked for "no limit")
+        chunks = [text]
     else:
         chunks = (text[i:i+chunk_chars] for i in range(0, len(text), chunk_chars))
 
     for doc in _nlp.pipe(chunks, batch_size=batch_size):
+        # Collect sentences
         for s in doc.sents:
             s_text = s.text.strip()
             if s_text:
                 sentences.append(s_text)
 
+        # Collect tokens, stopword filtering, lemmas, and POS tags
         for t in doc:
             if t.is_space:
                 continue
@@ -98,6 +108,7 @@ def _spacy_stream(text: str,
 
     return sentences, tokens_basic, tokens_nostop, lemmas, pos_seq
 
+# Wrapper around spaCy/NLTK processing
 def process_text(text: str,
                  *,
                  lowercase=True,
@@ -118,7 +129,7 @@ def process_text(text: str,
                 batch_size=batch_size,
             )
         except ValueError:
-            # pathological token edge case → NLTK fallback
+            # If spaCy fails on pathological cases, fallback to NLTK
             sentences = [s.strip() for s in sent_tokenize(text) if s.strip()]
             tokens_raw = word_tokenize(text)
             pos_seq = [p for _, p in pos_tag([w for w in tokens_raw if re.search(r"\S", w)], tagset="universal")]
@@ -126,6 +137,7 @@ def process_text(text: str,
             tokens_nostop = [t for t in tokens_basic if (t not in _STOPWORDS)] if remove_stop else list(tokens_basic)
             lemmas = [WordNetLemmatizer().lemmatize(w) for w in tokens_nostop]
     else:
+        # Direct NLTK fallback if spaCy unavailable
         sentences = [s.strip() for s in sent_tokenize(text) if s.strip()]
         tokens_raw = word_tokenize(text)
         pos_seq = [p for _, p in pos_tag([w for w in tokens_raw if re.search(r"\S", w)], tagset="universal")]
@@ -133,11 +145,13 @@ def process_text(text: str,
         tokens_nostop = [t for t in tokens_basic if (t not in _STOPWORDS)] if remove_stop else list(tokens_basic)
         lemmas = [WordNetLemmatizer().lemmatize(w) for w in tokens_nostop]
 
+    # Compute frequency statistics
     freq_lemmas = Counter(lemmas)
     vocab_size = len(freq_lemmas)
     token_count = len(lemmas)
     ttr = (vocab_size / token_count) if token_count else 0.0
 
+    # Return a structured analysis
     return {
         "sentences": sentences,
         "tokens": tokens_basic,
