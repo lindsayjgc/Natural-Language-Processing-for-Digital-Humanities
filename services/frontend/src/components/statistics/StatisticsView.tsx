@@ -2,10 +2,13 @@ import { SummaryCards } from "./SummaryCards";
 import { ReadabilityCards } from "./ReadabilityCards";
 import { SectionBreak } from "./SectionBreak";
 import { SentimentCards } from "./SentimentCards";
+import { KeywordsCards } from "./KeywordsCards";
 
 export function StatisticsView() {
 
-    //this is temp data for the pie charts in sentiment 
+    //this is all temp data, ill change it so we accept it as props or do the api call here 
+
+    //for the pie charts in sentiment 
     const polarityData = [
         { name: 'Positive', value: 75, color: '#10B981' },
         { name: 'Neutral', value: 15, color: '#D1D5DB' },
@@ -17,6 +20,15 @@ export function StatisticsView() {
         { name: 'Surprise', value: 20, color: '#F59E0B' },
         { name: 'Sadness', value: 15, color: '#3B82F6' },
         { name: 'Anger', value: 5, color: '#EF4444' }
+    ];
+
+    // for the keywords card 
+    const topKeywords = ['Technology', 'Innovation', 'Future', 'AI', 'Data'];
+
+    const keywordFrequencies = [
+        { keyword: 'AI', count: 12 },
+        { keyword: 'Machine Learning', count: 8 },
+        { keyword: 'GPT-4', count: 5 }
     ];
 
 
@@ -43,6 +55,12 @@ export function StatisticsView() {
                 <SentimentCards
                     polarityData={polarityData}
                     analysisData={analysisData}
+                />
+
+                <SectionBreak title="Keywords" />
+                <KeywordsCards
+                    topKeywords={topKeywords}
+                    keywordFrequencies={keywordFrequencies}
                 />
 
 
