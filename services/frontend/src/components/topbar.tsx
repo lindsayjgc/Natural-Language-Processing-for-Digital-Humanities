@@ -22,8 +22,11 @@ export function TopBar() {
                 </Link>
                 <Separator decorative orientation="vertical" className="h-6 bg-black/10" />
                 <nav className="hidden md:flex items-center gap-1 text-sm">
-                    <Link href="/documents" className="text-gray-900 px-3 py-1 rounded-md font-medium">
+                    <Link href="/documents" className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md">
                         Documents
+                    </Link>
+                    <Link href="/stats" className="text-gray-600 hover:text-gray-900 px-3 py-1 rounded-md">
+                        Stats
                     </Link>
                 </nav>
                 <div className="ml-auto flex items-center gap-3">
