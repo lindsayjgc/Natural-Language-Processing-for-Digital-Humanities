@@ -1,0 +1,14 @@
+# Core
+pandas
+numpy
+nltk
+
+# NLP
+spacy
+transformers
+torch
+
+# Document I/O (optional but recommended for .doc/.pdf/.rtf support)
+docx2txt
+python-docx
+textract
