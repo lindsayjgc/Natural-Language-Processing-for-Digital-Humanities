@@ -1,128 +1,180 @@
-# Command-line script for analyzing cleaned text files using the NLP pipeline.
-# Generates word frequencies, n-grams, POS distributions, and sentiment outputs.
+# Alternative CLI script for NLP analysis.
+# Unlike analyze_texts.py, this one can handle both ETL-cleaned texts and raw files
+# (PDF, DOCX, RTF, etc.) by using ETL readers/normalizers if --from-raw is specified.
 
-import argparse, json, torch
+import argparse, json, hashlib
 from pathlib import Path
 import pandas as pd
 
-# Display whether CUDA (GPU) or CPU is being used for transformer models
-print("Device set to use", "cuda" if torch.cuda.is_available() else "cpu")
-
-# Try relative import first, fallback to sys.path manipulation if run directly
+# Try local imports, fallback to package-relative if needed
 try:
-    from services.nlp.preprocessing import process_text
-    from services.nlp.features import count_ngrams, count_pos
-    from services.nlp.sentiment import analyze_sentiment
-    from services.shared.io_utils import hash_stem
+    from preprocessing import process_text
+    from features import count_ngrams, count_pos
+    from sentiment import analyze_sentiment
 except ImportError:
-    import sys
-
-    sys.path.append(str(Path(__file__).resolve().parents[2]))
-    from services.nlp.preprocessing import process_text
-    from services.nlp.features import count_ngrams, count_pos
-    from services.nlp.sentiment import analyze_sentiment
-    from services.shared.io_utils import hash_stem
+    from .preprocessing import process_text
+    from .features import count_ngrams, count_pos
+    from .sentiment import analyze_sentiment
 
 
-def analyze_file(txt_path: Path, outdir: Path, ngram_ns, topn, sent_threshold, max_sentences, chunk_chars):
+# ---- optional ETL helpers (for --from-raw mode) ----
+def _maybe_import_etl():
     """
-    Run full NLP analysis on a single text file and write outputs to CSV/JSON.
+    Try importing ETL utilities (for PDFs, DOCX, raw text cleaning).
+    Fallback: manually extend sys.path.
     """
-    # Ensure input is .txt (ETL should have cleaned beforehand)
-    if txt_path.suffix.lower() != ".txt":
-        raise SystemExit(f"TXT-only input for NLP stage. Use ETL first. Offending file: {txt_path.name}")
-    text = txt_path.read_text(encoding="utf-8", errors="ignore")
+    try:
+        from services.etl.readers import read_text_smart
+        from services.etl.normalizers import strip_gutenberg_headers, basic_clean, remove_footnotes
+        return read_text_smart, strip_gutenberg_headers, basic_clean, remove_footnotes
+    except Exception:
+        import sys
+        sys.path.append(str(Path(__file__).resolve().parents[2]))
+        from services.etl.readers import read_text_smart
+        from services.etl.normalizers import strip_gutenberg_headers, basic_clean, remove_footnotes
+        return read_text_smart, strip_gutenberg_headers, basic_clean, remove_footnotes
 
-    # Preprocess text (tokenize, lemmatize, remove stopwords, chunk with spaCy)
-    prep = process_text(
-        text,
-        lowercase=True,
-        remove_punct=True,
-        remove_nums=True,
-        remove_stop=True,
-        chunk_chars=chunk_chars,
-        batch_size=8
-    )
 
-    # Extract n-grams and POS tag counts
-    grams = count_ngrams(prep["lemmas"], ngram_ns=ngram_ns)
-    pos_counts = count_pos(prep["pos_seq"])
+# ---- local utilities ----
+def _read_clean_txt(p: Path) -> str:
+    """
+    Read a cleaned text file robustly, trying multiple encodings.
+    """
+    for enc in ("utf-8","utf-8-sig","cp1252","latin-1"):
+        try:
+            return p.read_text(encoding=enc)
+        except UnicodeDecodeError:
+            continue
+    return p.read_bytes().decode("utf-8","ignore")
 
-    # Run document + sentence-level sentiment analysis
-    doc_sent, sent_df, method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
+def _hash_stem(path: Path) -> str:
+    """
+    Generate a stable short hash from file path to use in filenames.
+    """
+    stem = path.stem
+    h = hashlib.sha1(str(path).encode("utf-8")).hexdigest()[:6]
+    return f"{stem}_{h}"
 
-    # Create output directory
+
+# ---- core analysis pipeline ----
+def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sent_threshold, max_sentences):
+    """
+    Run NLP analysis on raw text and write CSV/JSON outputs.
+    """
+    prep = process_text(text)
+    ngram_counts = count_ngrams(prep["lemmas"], ngram_ns)
+    pos_counts   = count_pos(prep["pos_seq"])
+    doc_sent, sent_df, sent_method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
+
     outdir.mkdir(parents=True, exist_ok=True)
-    tag = hash_stem(txt_path)  # Short hash for filenames to avoid collisions
 
-    # --- Save outputs ---
-    # Word frequency table
-    pd.DataFrame(prep["freq_lemmas"].most_common(topn), columns=["lemma", "count"]).to_csv(
-        outdir / f"{tag}_wordfreq_top{topn}.csv", index=False)
+    # Word frequencies
+    wf = pd.DataFrame(prep["freq_lemmas"].most_common(topn), columns=["lemma","count"])
+    wf.to_csv(outdir / f"{tag}_wordfreq_top{topn}.csv", index=False)
 
-    # N-grams tables
-    for name, counter in grams.items():
-        pd.DataFrame(counter.most_common(topn), columns=[name, "count"]).to_csv(outdir / f"{tag}_{name}_top{topn}.csv",
-                                                                                index=False)
+    # N-grams
+    for name, counter in ngram_counts.items():
+        top = pd.DataFrame(counter.most_common(topn), columns=[name,"count"])
+        top.to_csv(outdir / f"{tag}_{name}_top{topn}.csv", index=False)
 
-    # POS counts table
-    pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS", "count"]).to_csv(
-        outdir / f"{tag}_pos_counts.csv", index=False)
+    # POS
+    pos_df = pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS","count"])
+    pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
 
-    # Sentence-level emotional highlights
-    sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
-
-    # Document summary (JSON with metadata + sentiment method)
+    # Metadata summary
     meta = {
-        "file": str(txt_path),
-        "sentiment_method": method,
+        "sentiment_method": sent_method,
         "doc_sentiment": doc_sent,
         "vocab_size": prep["vocab_size"],
         "token_count": prep["token_count"],
         "type_token_ratio": prep["type_token_ratio"],
     }
-    (outdir / f"{tag}_summary.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+    (outdir / f"{tag}_summary.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Save vertical emotion scores (CSV for readability)
+    # Sentence-level sentiment
+    sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
+
+    # Vertical doc-level emotion scores
     lines = ["emotion,score"]
     for emo, score in sorted(doc_sent.items(), key=lambda kv: -kv[1]):
         lines.append(f"{emo},{score:.12f}")
-    vertical_text = "\n".join(lines) + "\n"
-    (outdir / f"{tag}_doc_emotion_vertical.csv").write_text(vertical_text, encoding="utf-8")
+    (outdir / f"{tag}_doc_emotion_vertical.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    return meta
+
+
+def process_path(ipath: Path,
+                 outdir: Path,
+                 *,
+                 from_raw: bool,
+                 ngram_ns,
+                 topn,
+                 sent_threshold,
+                 max_sentences):
+    """
+    Process a single file path (either cleaned text or raw document).
+    """
+    tag = _hash_stem(ipath)
+    if from_raw:
+        # Use ETL pipeline for raw docs
+        read_text_smart, strip_gut, basic_clean, remove_footnotes = _maybe_import_etl()
+        raw = read_text_smart(ipath)
+        text = strip_gut(raw)
+        text = remove_footnotes(text)
+        text = basic_clean(text, unwrap_lines=True)
+    else:
+        # Already ETL-cleaned .txt
+        text = _read_clean_txt(ipath)
+
+    meta = _analyze_text_blob(
+        text, tag, outdir,
+        ngram_ns=ngram_ns, topn=topn,
+        sent_threshold=sent_threshold, max_sentences=max_sentences
+    )
+    meta["file"] = str(ipath)
+    return meta
 
 
 def main():
     """
-    CLI entrypoint: parses arguments and runs analysis on file(s) or directory.
+    CLI entrypoint: handle args, support --from-raw to use ETL pipeline.
     """
-    ap = argparse.ArgumentParser(description="Analyze clean .txt files: wordfreq, n-grams, POS, sentiment.")
-    ap.add_argument("--input", required=True, help="Clean .txt file or directory (from ETL).")
-    ap.add_argument("--outdir", default="data/outputs", help="Output directory for CSV/JSON.")
-    ap.add_argument("--ngrams", default="1,2,3", help="Comma list: e.g., 1,2,3 or 1,2")
+    ap = argparse.ArgumentParser(description="NLP analysis on ETL-clean texts (default) or raw inputs.")
+    ap.add_argument("--input", required=True, help="File or directory.")
+    ap.add_argument("--outdir", default="nlp_outputs", help="Output directory.")
+    ap.add_argument("--ngrams", default="1,2,3", help="Comma list, e.g. 1,2,3")
     ap.add_argument("--topn", type=int, default=50)
-    ap.add_argument("--sent-threshold", type=float, default=0.5, help="Confidence cutoff for sentence emotions")
-    ap.add_argument("--max-sentences", type=int, default=0, help="Limit sentences analyzed for speed (0 = all)")
-    ap.add_argument("--chunk-chars", type=int, default=120000,
-                    help="spaCy chunk size in characters. Set 0 for single-pass.")
+    ap.add_argument("--sent-threshold", type=float, default=0.5)
+    ap.add_argument("--max-sentences", type=int, default=0)
+    ap.add_argument("--from-raw", action="store_true", help="If set, preprocess like ETL (readers/normalizers) before NLP.")
     args = ap.parse_args()
 
-    ip = Path(args.input)
+    ipath = Path(args.input)
     outdir = Path(args.outdir)
     ngram_ns = tuple(sorted({int(n.strip()) for n in args.ngrams.split(",") if n.strip()}))
 
-    # Collect paths to process
-    if ip.is_dir():
-        paths = list(ip.rglob("*.txt"))
+    # Collect input files depending on mode
+    if ipath.is_dir():
+        pats = ("*.txt",) if not args.from_raw else ("*.txt","*.docx","*.doc","*.rtf","*.pdf")
+        paths = []
+        for pat in pats:
+            paths.extend(ipath.rglob(pat))
         if not paths:
-            raise SystemExit("No .txt files found. Run ETL first.")
+            raise SystemExit("No files found for given mode (try --from-raw for non-.txt).")
     else:
-        if ip.suffix.lower() != ".txt":
-            raise SystemExit("TXT-only for NLP stage. Run ETL to produce clean .txt first.")
-        paths = [ip]
+        paths = [ipath]
 
-    # Run analysis on each file
+    # Run processing on each file
     for p in paths:
-        analyze_file(p, outdir, ngram_ns, args.topn, args.sent_threshold, args.max_sentences, args.chunk_chars)
+        meta = process_path(
+            p, outdir,
+            from_raw=args.from_raw,
+            ngram_ns=ngram_ns,
+            topn=args.topn,
+            sent_threshold=args.sent_threshold,
+            max_sentences=args.max_sentences
+        )
+        print(json.dumps(meta, indent=2))
 
 
 if __name__ == "__main__":
