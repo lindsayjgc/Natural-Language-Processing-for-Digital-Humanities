@@ -1,20 +1,29 @@
-# fastapi backend API
-from fastapi import FastAPI, HTTPException
-from fastapi import UploadFile, File
+# FastAPI backend API
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from services.api import routes
 from pathlib import Path
 import tempfile
-import os
 
+# Import NLP processing
 try:
     from services.nlp.analyze_texts import process_path
 except ImportError:
     import sys
+
     sys.path.append(str(Path(__file__).resolve().parents[2]))
     from services.nlp.analyze_texts import process_path
 
-app = FastAPI()
+# Import database functions
+from services.api.database import (
+    get_user_documents,
+    create_library_item,
+    update_library_item,
+    save_document_stats,
+    get_library_item,
+    test_connection,
+)
+
+app = FastAPI(title="NLP Document Library API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,29 +33,97 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(routes.router)
 
-# post endpoint for user to upload new document for nlp processing
+@app.on_event("startup")
+async def startup_event():
+    """Test database connection on startup"""
+    await test_connection()
 
-@app.post("/process_document/")
-async def process_document(file: UploadFile = File(...)):
-    # save as a temporary file
-    temp_dir = tempfile.TemporaryDirectory()
-    temp = os.path.join(temp_dir, file.filename)
+
+@app.get("/")
+async def root():
+    return {"message": "NLP Document Library API", "version": "1.0.0"}
+
+
+@app.get("/documents/{user_id}")
+async def get_documents(user_id: str):
+    """Get all documents for a user"""
     try:
-        contents = file.file.read()
-        temp.write(contents)
-        temp.flush()
+        documents = await get_user_documents(user_id)
+        return {"user_id": user_id, "documents": documents}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get documents: {str(e)}"
+        )
 
-        temp_path = Path(temp.name)
-        temp_dir = temp_path.parent
-        temp_outdir = temp_dir / "nlp_outputs"
 
-        process_path(ipath=temp_path, outdir=temp_outdir, from_raw=True)
-        # TODO: return actual results from database
-        return {"status": "success", "output_dir": str(temp_outdir)}
-    except Exception:
-        raise HTTPException(status_code=500, detail="Failed to read uploaded file")
-    finally:
-        file.file.close()
-    
+@app.post("/documents/upload")
+async def upload_document(user_id: str = Form(...), file: UploadFile = File(...)):
+    """Upload and process a document"""
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="No file provided")
+
+    # Create library item first
+    item_id = await create_library_item(user_id, file.filename)
+
+    try:
+        # Save uploaded file temporarily
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=Path(file.filename).suffix
+        ) as temp_file:
+            content = await file.read()
+            temp_file.write(content)
+            temp_path = Path(temp_file.name)
+
+        # Create output directory for NLP processing
+        temp_outdir = temp_path.parent / "nlp_outputs"
+        temp_outdir.mkdir(exist_ok=True)
+
+        # Process the document
+        meta = process_path(ipath=temp_path, outdir=temp_outdir, from_raw=True)
+
+        # Save stats to database
+        stats_id = await save_document_stats(meta)
+
+        # Update library item with stats
+        await update_library_item(item_id, stats_id, "completed")
+
+        # Clean up temp file
+        temp_path.unlink()
+
+        return {
+            "library_item_id": item_id,
+            "filename": file.filename,
+            "processing_status": "completed",
+            "stats": meta,
+        }
+
+    except Exception as e:
+        # Update library item with error status
+        await update_library_item(item_id, status="failed", error=str(e))
+
+        # Clean up temp file if it exists
+        if "temp_path" in locals():
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
+
+        raise HTTPException(
+            status_code=500, detail=f"Document processing failed: {str(e)}"
+        )
+
+
+@app.get("/documents/{user_id}/{item_id}")
+async def get_document(user_id: str, item_id: str):
+    """Get a specific document with its stats"""
+    try:
+        document = await get_library_item(item_id, user_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        return document
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get document: {str(e)}")

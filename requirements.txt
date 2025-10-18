@@ -12,3 +12,11 @@ torch
 docx2txt
 python-docx
 textract
+
+# API
+fastapi
+uvicorn[standard]
+python-multipart
+pymongo
+motor
+python-dotenv

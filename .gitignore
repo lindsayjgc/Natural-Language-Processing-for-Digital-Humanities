@@ -3,3 +3,33 @@
 .cursor
 __pycache__/
 .env
+
+# Virtual environments
+venv/
+venv311/
+env/
+ENV/
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+*.log
+
+# Test files
+test_doc.txt
