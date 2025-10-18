@@ -2,3 +2,4 @@
 .idea
 .cursor
 __pycache__/
+.env

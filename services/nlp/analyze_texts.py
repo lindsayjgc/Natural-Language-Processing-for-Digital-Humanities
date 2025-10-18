@@ -107,10 +107,10 @@ def process_path(ipath: Path,
                  outdir: Path,
                  *,
                  from_raw: bool,
-                 ngram_ns,
-                 topn,
-                 sent_threshold,
-                 max_sentences):
+                 ngram_ns=(1, 2, 3), 
+                 topn=50, 
+                 sent_threshold=0.5, 
+                 max_sentences=0):
     """
     Process a single file path (either cleaned text or raw document).
     """
