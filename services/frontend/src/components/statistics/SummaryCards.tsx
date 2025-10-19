@@ -1,39 +1,63 @@
-import { Card } from "../ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface SummaryCardsProps {
-    characters: string,
-    words: string,
-    sentences: string,
+  characters: string;
+  words: string;
+  sentences: string;
 }
 
-export function SummaryCards({ characters, words, sentences }: SummaryCardsProps) {
+export function SummaryCards({
+  characters,
+  words,
+  sentences,
+}: SummaryCardsProps) {
+  return (
+    <div className="flex flex-col md:flex-row gap-6 w-full">
+      <Card className="flex-1">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-blue-500">
+            Character Count
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-4xl font-bold text-gray-900 mb-2">
+            {characters}
+          </div>
+          <CardDescription>Total number of characters.</CardDescription>
+        </CardContent>
+      </Card>
 
-    return (
-        <div className="flex flex-col md:flex-row gap-6 w-full">
-            <Card className="flex-1 p-6 bg-white border border-gray-200 rounded-lg">
-                <h3 className="text-lg font-medium text-blue-500 mb-3">Character Count</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                    {characters}
-                </div>
-                <p className="text-sm text-gray-500">Total number of characters.</p>
-            </Card>
+      <Card className="flex-1">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-blue-500">
+            Word Count
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-4xl font-bold text-gray-900 mb-2">{words}</div>
+          <CardDescription>Total number of words.</CardDescription>
+        </CardContent>
+      </Card>
 
-            <Card className="flex-1 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-blue-500 mb-3">Word Count</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                    {words}
-                </div>
-                <p className="text-sm text-gray-500">Total number of words.</p>
-            </Card>
-
-            <Card className="flex-1 p-6 bg-white border border-gray-200 rounded-lg shadow-sm">
-                <h3 className="text-lg font-medium text-blue-500 mb-3">Sentence Count</h3>
-                <div className="text-4xl font-bold text-gray-900 mb-2">
-                    {sentences}
-                </div>
-                <p className="text-sm text-gray-500">Total number of sentences.</p>
-            </Card>
-            
-        </div>
-    )
+      <Card className="flex-1">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-blue-500">
+            Sentence Count
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-4xl font-bold text-gray-900 mb-2">
+            {sentences}
+          </div>
+          <CardDescription>Total number of sentences.</CardDescription>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

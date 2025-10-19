@@ -30,6 +30,17 @@ build/
 # OS
 Thumbs.db
 *.log
+backend.log
+frontend.log
+
+# Node.js / pnpm workspace
+/node_modules/
+/pnpm-lock.yaml
+node_modules/
+package-lock.json
 
 # Test files
 test_doc.txt
+
+
+/test_output/

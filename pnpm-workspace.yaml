@@ -1,0 +1,7 @@
+packages:
+  - services/frontend
+
+ignoredBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - esbuild
+  - sharp
