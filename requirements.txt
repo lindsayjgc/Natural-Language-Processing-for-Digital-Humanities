@@ -19,3 +19,8 @@ python-multipart
 pymongo[srv]
 motor
 python-dotenv
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart

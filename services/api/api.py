@@ -1,9 +1,10 @@
 # FastAPI backend API
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pathlib import Path
 import tempfile
+from datetime import timedelta
 
 # Import NLP processing
 try:
@@ -22,6 +23,22 @@ from services.api.database import (
     save_document_stats,
     get_document,
     test_connection,
+    create_user,
+    get_user_by_email,
+    get_user_by_id,
+)
+
+# Import authentication
+from services.api.auth import (
+    UserCreate,
+    UserLogin,
+    User,
+    Token,
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    get_current_user,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
 )
 
 
@@ -67,7 +84,10 @@ async def upload_document_options():
 
 
 @app.post("/documents/upload")
-async def upload_document(user_id: str = Form(...), file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...), 
+    user_id: str = Depends(get_current_user)
+):
     """Upload and process a document"""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
@@ -157,3 +177,61 @@ async def get_document_by_id(user_id: str, document_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get document: {str(e)}")
+
+# Authentication endpoints
+@app.post("/auth/register", response_model=User)
+async def register(user: UserCreate):
+    """Register a new user"""
+    existing_user = await get_user_by_email(user.email)
+    if existing_user:
+        raise HTTPException(
+            status_code=400, detail="Email already registered"
+        )
+    
+    # Create new user
+    hashed_password = get_password_hash(user.password)
+    user_id = await create_user(user.email, hashed_password)
+    
+    created_user = await get_user_by_id(user_id)
+    # Return user info (without password)
+    return User(
+        id=user_id,
+        email=user.email,
+        created_at=created_user["created_at"], 
+    )
+
+
+@app.post("/auth/login", response_model=Token)
+async def login(user_credentials: UserLogin):
+    """Login user and return access token"""
+    # Get user from database
+    user = await get_user_by_email(user_credentials.email)
+    if not user or not verify_password(user_credentials.password, user["hashed_password"]):
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user["_id"]}, expires_delta=access_token_expires
+    )
+    
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/auth/me", response_model=User)
+async def get_current_user_info(current_user_id: str = Depends(get_current_user)):
+    """Get current user information"""
+    user = await get_user_by_id(current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return User(
+        id=user["_id"],
+        email=user["email"],
+    )
+
+
