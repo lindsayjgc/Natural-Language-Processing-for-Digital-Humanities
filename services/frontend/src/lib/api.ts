@@ -1,4 +1,5 @@
 // API client for NLP Document Library backend
+import { getAuthToken } from './auth';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface Document {
@@ -46,13 +47,20 @@ class ApiClient {
     options: RequestInit = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
+    const token = getAuthToken();
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
 
     const response = await fetch(url, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
       ...options,
+      headers,
     });
 
     if (!response.ok) {
@@ -83,9 +91,16 @@ class ApiClient {
     formData.append("user_id", userId);
     formData.append("file", file);
 
+    const token = getAuthToken();
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/documents/upload`, {
         method: "POST",
+        headers,
         body: formData,
       });
 
