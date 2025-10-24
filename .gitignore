@@ -2,3 +2,45 @@
 .idea
 .cursor
 __pycache__/
+.env
+
+# Virtual environments
+venv/
+venv311/
+env/
+ENV/
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+*.log
+backend.log
+frontend.log
+
+# Node.js / pnpm workspace
+/node_modules/
+/pnpm-lock.yaml
+node_modules/
+package-lock.json
+
+# Test files
+test_doc.txt
+
+
+/test_output/

@@ -11,4 +11,11 @@ torch
 # Document I/O (optional but recommended for .doc/.pdf/.rtf support)
 docx2txt
 python-docx
-textract
+
+# API
+fastapi
+uvicorn[standard]
+python-multipart
+pymongo[srv]
+motor
+python-dotenv

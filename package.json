@@ -1,0 +1,30 @@
+{
+    "name": "nlp-digital-humanities",
+    "version": "1.0.0",
+    "private": true,
+    "description": "NLP Document Library for Digital Humanities",
+    "scripts": {
+        "setup": "./scripts/install.sh",
+        "dev": "concurrently -n backend,frontend -c blue,green \"pnpm run backend\" \"pnpm run frontend\"",
+        "dev:backend": "cd services/api && ../../venv311/bin/uvicorn api:app --reload --port 8000",
+        "dev:frontend": "pnpm --filter frontend dev",
+        "backend": "pnpm run dev:backend",
+        "frontend": "pnpm run dev:frontend",
+        "test": "pnpm run test:backend && pnpm run test:frontend",
+        "test:backend": "./venv311/bin/pytest tests/unit/test_api_simple.py tests/unit/test_database.py tests/unit/test_nlp_processing.py -v",
+        "test:frontend": "pnpm --filter frontend test --run",
+        "test:watch": "pnpm --filter frontend test",
+        "build": "pnpm --filter frontend build",
+        "build:frontend": "pnpm --filter frontend build",
+        "lint": "pnpm --filter frontend lint",
+        "format": "pnpm --filter frontend format",
+        "clean": "./scripts/stop-dev.sh && rm -rf node_modules services/frontend/node_modules"
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1"
+    },
+    "engines": {
+        "node": ">=18.0.0",
+        "pnpm": ">=10.0.0"
+    }
+}

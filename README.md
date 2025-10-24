@@ -1,97 +1,343 @@
-# Team Contract and Project Overview
+# NLP Document Library for Digital Humanities
 
-## Project Overview
+A full-stack application for analyzing literary and historical texts using Natural Language Processing. Upload documents, perform automated NLP analysis including sentiment analysis, vocabulary statistics, and more through an intuitive web interface.
 
-**Overall Objectives:**  
-Our team aims to develop a machine learning (ML) program capable of processing and learning from provided texts related to history and literature. The end product will include a user-friendly website frontend that displays and interacts with this curated information.
+## 🚀 Quick Start
 
-### Relevant Docs
+```bash
+# Clone and navigate
+git clone <repository-url>
+cd Natural-Language-Processing-for-Digital-Humanities
 
-- [Meeting Notes](https://docs.google.com/document/d/1zTYazFBrUcNKSXYYG3Sil48KUg2LX25lfew50AlFTLI/edit?tab=t.0)
-- [Contract](https://docs.google.com/document/d/1HU5PNYD8z_Wzx6vONrB9GvUc7qkXME4gnrfXbqMdZUI/edit?tab=t.0)
-- [Proposal](https://docs.google.com/document/d/1VOufFqSP2i1Cwe3wolJzSFsuPW4WJDnXQBxCUmPc7Qw/edit?tab=t.0)
----
+# Setup everything (Python venv, Node packages, NLTK data, etc.)
+pnpm setup
 
-## Individual Responsibilities
+# Configure MongoDB Atlas (edit .env file)
+# Add your MongoDB connection string to .env
 
-Each team member is expected to:
-- Contribute to research and data collection of relevant historical and literary texts.
-- Participate in the design and coding of the ML program.
-- Develop, test, and maintain the website frontend.
-- Engage in documentation and code review processes.
-- Attend all scheduled team and advisor meetings.
-- Lead or facilitate at least one meeting with the advisor.
-- Communicate progress, raise issues, and ask for help when needed.
+# Start all services
+pnpm dev
 
-Specific roles and assignments will be determined collaboratively and documented in a shared team task board.
+# Open your browser
+# Frontend: http://localhost:3000
+# API Docs: http://localhost:8000/docs
+```
 
----
+**That's it!** Upload a document and explore the NLP analysis features.
 
-## Values and Agreement Statements
+> **New to the project?** See [QUICKSTART.md](./QUICKSTART.md) for a detailed 4-step setup guide.
 
-- **Respect:** All team members will treat each other with respect and consideration.
-- **Inclusion:** Everyone’s ideas and perspectives are welcome.
-- **Responsibility:** Members will complete assigned tasks by agreed deadlines.
-- **Transparency:** Communication about availability, challenges, and progress will be open and honest.
-- **Support:** Team members will help each other and collaborate on problem solving.
+### 📝 Common Commands
 
----
+```bash
+# Setup & Development
+pnpm setup            # Complete project setup (first time only)
+pnpm dev              # Start both backend and frontend
+pnpm backend          # Start backend only
+pnpm frontend         # Start frontend only
 
-## Software Configuration Management Protocol
+# Testing
+pnpm test             # Run all tests
+pnpm test:backend     # Run backend tests only
+pnpm test:frontend    # Run frontend tests only
+pnpm test:watch       # Run frontend tests in watch mode
 
-- All code and documents will be stored in a shared GitHub repository.
-- Version control will be managed using Git and GitHub, with clear commit messages and regular pushes.
-- Branching strategy will be followed (e.g., `main` for production, `dev` for ongoing work, feature branches for specific tasks).
-- All changes will be reviewed via pull requests before merging into the main branch.
-- Merge conflicts will be resolved collaboratively, with priority given to consensus and code quality.
-- Documentation updates are required for all changes impacting usage or setup.
+# Building
+pnpm build            # Build frontend for production
 
----
+# Code Quality
+pnpm lint             # Run linter
+pnpm format           # Format code
 
-## Meeting Times
+# Maintenance
+pnpm clean            # Clean dependencies and artifacts
+./scripts/stop-dev.sh         # Stop all services
+```
 
-- **Team Meetings (without advisor):**  
-  The team will meet every [insert day, e.g., Monday] at [insert time] via [insert platform, e.g., Zoom or Discord].
-- **Advisor Meetings:**  
-  Meetings with the advisor will occur [insert frequency, e.g., bi-weekly] on [insert day/time].  
-  Each meeting will be led by a rotating facilitator; every member is required to facilitate at least one advisor meeting and be present for all.
+### Alternative: Shell Scripts
 
----
-
-## Communication
-
-- **Primary Platform:** [Insert platform, e.g., Slack/Discord/WhatsApp]
-- **Email:** Used for formal communication and sharing important documents.
-- **GitHub Issues/PRs:** For technical discussions and code reviews.
-
----
-
-## Conflict Resolution Protocol
-
-1. Address issues directly and respectfully with the involved parties.
-2. If unresolved, bring the matter to the team for group discussion.
-3. If still unresolved, consult with the advisor for mediation and guidance.
-4. All discussions will be documented for reference.
+If you prefer to run setup manually:
+```bash
+./scripts/install.sh          # Install dependencies
+./scripts/start-dev.sh        # Start all services
+./scripts/stop-dev.sh         # Stop all services
+```
 
 ---
 
-## Consequences for Agreement Violations
+## 🎯 What You Get
 
-- First Violation: Verbal/written warning and discussion with the team.
-- Second Violation: Meeting with the team and advisor to discuss continued participation.
-- Continued Violations: Possible removal from the project, subject to advisor and institutional policies.
+### 📊 NLP Analysis Features
+- **Sentiment Analysis** - Positive/negative/neutral sentiment detection
+- **Vocabulary Statistics** - Word counts, type-token ratios, readability metrics
+- **N-gram Analysis** - Most common words, phrases, and patterns
+- **Emotional Tone Detection** - Identify emotional content in text
+- **Part-of-Speech Tagging** - Analyze grammatical structures
+
+### 📄 Document Support
+- **Multiple Formats** - TXT, PDF, DOCX, RTF, legacy DOC files
+- **Smart Processing** - Automatic text cleaning and normalization
+- **Project Gutenberg** - Specialized handling for public domain texts
+- **Batch Processing** - Upload and analyze multiple documents
+
+### 🌐 Modern Web Interface
+- **Drag & Drop Upload** - Intuitive document uploading
+- **Real-time Processing** - Live status updates during analysis
+- **Interactive Visualizations** - Charts and graphs for NLP statistics
+- **Responsive Design** - Works on desktop and mobile devices
+
+## 🎯 Project Overview
+
+This system allows researchers and students in digital humanities to:
+- Upload and manage textual documents (TXT, PDF, DOCX, RTF)
+- Automatically process texts with state-of-the-art NLP techniques
+- View detailed sentiment analysis and vocabulary statistics
+- Analyze patterns across multiple documents
+- Store and retrieve analysis results via cloud database
+
+## 📚 Common Use Cases
+
+### For Researchers
+- **Literary Analysis** - Analyze sentiment and vocabulary patterns in novels, poetry, plays
+- **Historical Document Processing** - Process and analyze historical texts, letters, manuscripts
+- **Comparative Studies** - Compare writing styles across different authors or time periods
+- **Digital Humanities Projects** - Support large-scale text analysis research
+
+### For Students
+- **Text Analysis Learning** - Hands-on experience with NLP techniques
+- **Document Processing** - Learn to work with different text formats
+- **Research Projects** - Analyze texts for academic assignments
+- **Technology Skills** - Gain experience with modern web development and NLP
+
+### For Educators
+- **Curriculum Development** - Create interactive text analysis exercises
+- **Student Projects** - Provide tools for digital humanities coursework
+- **Research Support** - Enable students to perform sophisticated text analysis
+- **Technology Integration** - Bridge traditional humanities with modern technology
+
+**Team Documentation**: [Team Contract](./TEAM_CONTRACT.md) | [Meeting Notes](https://docs.google.com/document/d/1zTYazFBrUcNKSXYYG3Sil48KUg2LX25lfew50AlFTLI/edit) | [Project Proposal](https://docs.google.com/document/d/1VOufFqSP2i1Cwe3wolJzSFsuPW4WJDnXQBxCUmPc7Qw/edit)
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+**Backend**
+- **FastAPI** - Modern Python web framework
+- **MongoDB Atlas** - Cloud NoSQL database
+- **Motor** - Async MongoDB driver
+
+**NLP Pipeline**
+- **spaCy** - Industrial-strength NLP
+- **NLTK** - Natural Language Toolkit
+- **Transformers** - Hugging Face transformer models for sentiment analysis
+
+**ETL Pipeline**
+- Custom text processing and normalization
+- Multi-format document readers (PDF, DOCX, RTF, TXT)
+- Project Gutenberg boilerplate removal
+
+**Frontend**
+- **Next.js 15** - React framework
+- **TypeScript** - Type-safe JavaScript
+- **Tailwind CSS** - Utility-first CSS
+- **shadcn/ui** - Component library
+
+### System Components
+
+```
+├── services/
+│   ├── api/          # FastAPI backend server
+│   ├── nlp/          # NLP processing pipeline
+│   ├── etl/          # Text ingestion and normalization
+│   ├── frontend/     # Next.js web application
+│   └── shared/       # Shared utilities
+├── data/             # Sample text corpus
+│   ├── literature/   # Literary texts
+│   └── history/      # Historical documents
+└── tests/            # Test suites
+```
+
+
+## 📚 Documentation
+
+- **[Setup Guide](./SETUP.md)** - Detailed installation instructions
+- **[API Documentation](./services/api/API_DOCS.md)** - Complete API reference
+- **[ETL Pipeline](./services/etl/README.md)** - Text processing documentation
+- **[NLP Pipeline](./services/nlp/README.md)** - NLP analysis documentation
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+./venv311/bin/python -m pytest tests/ -v
+
+# Run specific test suites
+./venv311/bin/python -m pytest tests/unit/ -v         # Unit tests
+./venv311/bin/python -m pytest tests/integration/ -v  # Integration tests
+```
+
+## 🔄 Development Workflow
+
+1. **Start development environment:**
+   ```bash
+   ./scripts/start-dev.sh
+   ```
+
+2. **Make changes to code:**
+   - Backend changes in `services/api/` auto-reload
+   - Frontend changes in `services/frontend/src/` hot-reload
+   - NLP pipeline changes in `services/nlp/` require backend restart
+
+3. **Test your changes:**
+   - Frontend: http://localhost:3000
+   - API: http://localhost:8000/docs
+   - Upload a document to test the full pipeline
+
+4. **Stop when done:**
+   ```bash
+   ./scripts/stop-dev.sh
+   ```
+
+### File Watching & Hot Reload
+
+- **Backend**: Uvicorn auto-reloads on Python file changes
+- **Frontend**: Next.js hot module replacement for instant updates
+- **Logs**: Real-time colored output shows both services
+- **Database**: MongoDB Atlas persists data between restarts
+
+## 🛠️ Development
+
+### Project Structure
+
+```
+services/
+├── api/
+│   ├── api.py          # Main FastAPI application
+│   ├── database.py     # MongoDB operations
+│   └── test_api.py     # Test version without MongoDB
+├── nlp/
+│   ├── analyze_texts.py   # Main analysis pipeline
+│   ├── preprocessing.py   # Text preprocessing
+│   ├── features.py        # Feature extraction
+│   └── sentiment.py       # Sentiment analysis
+├── etl/
+│   ├── readers.py         # Multi-format document readers
+│   ├── normalizers.py     # Text normalization
+│   └── ingest_texts.py    # ETL CLI
+└── frontend/
+    └── src/
+        ├── app/              # Next.js pages
+        ├── components/       # React components
+        └── lib/             # Utilities and API client
+```
+
+### Key Features
+
+**NLP Analysis**
+- Sentiment analysis using transformer models (with VADER fallback)
+- Vocabulary statistics (vocab size, token count, type-token ratio)
+- Part-of-speech tagging
+- N-gram extraction
+- Emotional tone detection
+
+**Document Processing**
+- Multi-format support: TXT, PDF, DOCX, RTF, legacy DOC
+- Automatic text cleaning and normalization
+- Project Gutenberg boilerplate removal
+- Footnote removal
+- Whitespace normalization
+
+**Web Interface**
+- Drag-and-drop document upload
+- Real-time processing status
+- Interactive NLP statistics visualization
+- Document management (list, view, analyze)
+- Responsive design for mobile/desktop
+
+## 🌐 Deployment
+
+The application is designed for cloud deployment:
+
+- **Backend**: Deploy to Railway, Render, Fly.io, or cloud providers
+- **Frontend**: Deploy to Vercel (recommended) or Netlify
+- **Database**: MongoDB Atlas (already configured)
+
+See individual service READMEs for deployment-specific instructions.
+
+## 📊 API Endpoints
+
+- `GET /` - Health check
+- `GET /documents/{user_id}` - List user documents
+- `POST /documents/upload` - Upload and process document
+- `GET /documents/{user_id}/{item_id}` - Get document with NLP stats
+
+Full API documentation: [API_DOCS.md](./services/api/API_DOCS.md)
+
+## 🛠️ Troubleshooting
+
+| Problem | Solution |
+|---------|----------|
+| **Script permission denied** | `chmod +x start-dev.sh stop-dev.sh install.sh` |
+| **Port already in use** | `./scripts/stop-dev.sh --verbose` |
+| **Installation failed** | `./scripts/install.sh --yes` (retry with auto-mode) |
+| **Services won't start** | Check `.env` file and MongoDB connection |
+| **Frontend not loading** | Verify `NEXT_PUBLIC_API_URL` in `.env.local` |
+
+> **Need more help?** See [SETUP.md](./SETUP.md) for detailed troubleshooting guide.
+
+## 📈 Project Status
+
+### ✅ What's Working
+- **Complete Installation System** - Automated setup with `./scripts/install.sh`
+- **Development Environment** - Easy start/stop with `./scripts/start-dev.sh` and `./scripts/stop-dev.sh`
+- **Full NLP Pipeline** - Sentiment analysis, vocabulary stats, n-grams, POS tagging
+- **Multi-format Support** - TXT, PDF, DOCX, RTF document processing
+- **Modern Web Interface** - React/Next.js frontend with real-time updates
+- **Cloud Database** - MongoDB Atlas integration for data persistence
+- **API Documentation** - Interactive API docs at `/docs`
+
+### 🚧 In Development
+- **Batch Processing** - Upload and analyze multiple documents simultaneously
+- **Advanced Visualizations** - Enhanced charts and graphs for NLP statistics
+- **User Authentication** - Multi-user support and document sharing
+- **Export Features** - Download analysis results in various formats
+
+### 🎯 Roadmap
+- **Collaborative Features** - Team workspaces and shared document libraries
+- **Advanced NLP Models** - Integration with latest transformer models
+- **Mobile App** - Native mobile application for document analysis
+- **API Rate Limiting** - Production-ready API with proper rate limiting
+
+## 🤝 Contributing
+
+See [Team Contract](./TEAM_CONTRACT.md) for team collaboration guidelines.
+
+### Development Setup
+```bash
+# Clone and setup
+git clone <repository-url>
+cd Natural-Language-Processing-for-Digital-Humanities
+./scripts/install.sh
+
+# Start developing
+./scripts/start-dev.sh
+
+# Run tests
+./venv311/bin/python -m pytest tests/ -v
+```
+
+## 📝 License
+
+[Add your license here]
+
+## 🙏 Acknowledgements
+
+- Project Gutenberg for public domain texts
+- The spaCy, NLTK, and Hugging Face teams for excellent NLP tools
+- Contributors to docx2txt, python-docx, and textract libraries
 
 ---
 
-## Signatures
-
-By signing below, each team member agrees to abide by the terms of this contract.
-
-| Name              | Signature        | Date       |
-|-------------------|-----------------|------------|
-|                   |                 |            |
-|                   |                 |            |
-|                   |                 |            |
-|                   |                 |            |
-
----
+**Course**: Digital Humanities NLP Project
+**Institution**: [Your Institution]
+**Year**: 2025
