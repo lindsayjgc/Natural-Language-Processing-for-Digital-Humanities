@@ -93,7 +93,7 @@ export function RegisterForm({
           <Checkbox
             id="remember-me"
             checked={rememberMe}
-            onCheckedChange={(checked: boolean) => setRememberMe(checked)}
+            onCheckedChange={(checked) => setRememberMe(checked === true)}
             disabled={isLoading}
           />
           <Label htmlFor="remember-me" className="text-sm font-normal">
