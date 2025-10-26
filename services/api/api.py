@@ -235,8 +235,10 @@ async def get_current_user_info(current_user_id: str = Depends(get_current_user)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Parse the ISO string back to datetime
-    created_at = datetime.fromisoformat(user["created_at"])
+    # Parse the ISO string back to datetime if necessary
+    created_at = user["created_at"]
+    if isinstance(created_at, str):
+        created_at = datetime.fromisoformat(created_at)
 
     return User(
         id=user["_id"],
