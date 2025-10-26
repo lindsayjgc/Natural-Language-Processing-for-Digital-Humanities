@@ -19,35 +19,45 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # JWT token scheme
 security = HTTPBearer()
 
+
 # Pydantic models
 class UserCreate(BaseModel):
     email: str
     password: str
+    remember_me: bool = False
+
 
 class UserLogin(BaseModel):
     email: str
     password: str
+    remember_me: bool = False
+
 
 class User(BaseModel):
     id: str
     email: str
     created_at: datetime
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     user_id: Optional[str] = None
+
 
 # Password utilities
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
     return pwd_context.verify(plain_password, hashed_password)
 
+
 def get_password_hash(password: str) -> str:
     """Hash a password"""
     return pwd_context.hash(password)
+
 
 # JWT utilities
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -61,6 +71,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+
 def verify_token(token: str) -> Optional[str]:
     """Verify a JWT token and return user_id"""
     try:
@@ -72,8 +83,11 @@ def verify_token(token: str) -> Optional[str]:
     except JWTError:
         return None
 
+
 # Authentication dependency
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> str:
     """Get current user from JWT token"""
     token = credentials.credentials
     user_id = verify_token(token)

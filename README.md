@@ -12,8 +12,9 @@ cd Natural-Language-Processing-for-Digital-Humanities
 # Setup everything (Python venv, Node packages, NLTK data, etc.)
 pnpm setup
 
-# Configure MongoDB Atlas (edit .env file)
-# Add your MongoDB connection string to .env
+# Configure environment (copy and edit .env file)
+cp env.example .env
+# Edit .env with your MongoDB connection string and other settings
 
 # Start all services
 pnpm dev
@@ -74,6 +75,13 @@ If you prefer to run setup manually:
 - **Emotional Tone Detection** - Identify emotional content in text
 - **Part-of-Speech Tagging** - Analyze grammatical structures
 
+### 🔐 User Authentication
+- **Secure Login/Registration** - JWT-based authentication system
+- **Remember Me Feature** - Stay logged in for 30 days with extended tokens
+- **Modal-based Forms** - Clean, non-disruptive authentication experience
+- **Password Security** - Bcrypt password hashing
+- **Session Management** - Automatic token refresh and validation
+
 ### 📄 Document Support
 - **Multiple Formats** - TXT, PDF, DOCX, RTF, legacy DOC files
 - **Smart Processing** - Automatic text cleaning and normalization
@@ -85,6 +93,8 @@ If you prefer to run setup manually:
 - **Real-time Processing** - Live status updates during analysis
 - **Interactive Visualizations** - Charts and graphs for NLP statistics
 - **Responsive Design** - Works on desktop and mobile devices
+- **User Authentication** - Secure login/registration with "Remember Me" functionality
+- **Modal-based Auth** - Clean, non-disruptive authentication experience
 
 ## 🎯 Project Overview
 
@@ -252,6 +262,8 @@ services/
 - Real-time processing status
 - Interactive NLP statistics visualization
 - Document management (list, view, analyze)
+- User authentication with "Remember Me" functionality
+- Modal-based login/registration forms
 - Responsive design for mobile/desktop
 
 ## 🌐 Deployment
@@ -266,6 +278,12 @@ See individual service READMEs for deployment-specific instructions.
 
 ## 📊 API Endpoints
 
+### Authentication
+- `POST /auth/register` - User registration
+- `POST /auth/login` - User login (supports "Remember Me")
+- `GET /auth/me` - Get current user info
+
+### Documents
 - `GET /` - Health check
 - `GET /documents/{user_id}` - List user documents
 - `POST /documents/upload` - Upload and process document
@@ -293,13 +311,15 @@ Full API documentation: [API_DOCS.md](./services/api/API_DOCS.md)
 - **Full NLP Pipeline** - Sentiment analysis, vocabulary stats, n-grams, POS tagging
 - **Multi-format Support** - TXT, PDF, DOCX, RTF document processing
 - **Modern Web Interface** - React/Next.js frontend with real-time updates
+- **User Authentication** - Secure login/registration with JWT tokens
+- **Remember Me Feature** - Extended session tokens (30 days) for convenience
 - **Cloud Database** - MongoDB Atlas integration for data persistence
 - **API Documentation** - Interactive API docs at `/docs`
 
 ### 🚧 In Development
 - **Batch Processing** - Upload and analyze multiple documents simultaneously
 - **Advanced Visualizations** - Enhanced charts and graphs for NLP statistics
-- **User Authentication** - Multi-user support and document sharing
+- **Document Sharing** - Multi-user document collaboration features
 - **Export Features** - Download analysis results in various formats
 
 ### 🎯 Roadmap

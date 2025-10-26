@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pathlib import Path
 import tempfile
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 # Import NLP processing
 try:
@@ -85,8 +85,7 @@ async def upload_document_options():
 
 @app.post("/documents/upload")
 async def upload_document(
-    file: UploadFile = File(...), 
-    user_id: str = Depends(get_current_user)
+    file: UploadFile = File(...), user_id: str = Depends(get_current_user)
 ):
     """Upload and process a document"""
     if not file.filename:
@@ -178,26 +177,25 @@ async def get_document_by_id(user_id: str, document_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get document: {str(e)}")
 
+
 # Authentication endpoints
 @app.post("/auth/register", response_model=User)
 async def register(user: UserCreate):
     """Register a new user"""
     existing_user = await get_user_by_email(user.email)
     if existing_user:
-        raise HTTPException(
-            status_code=400, detail="Email already registered"
-        )
-    
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     # Create new user
     hashed_password = get_password_hash(user.password)
     user_id = await create_user(user.email, hashed_password)
-    
+
     created_user = await get_user_by_id(user_id)
     # Return user info (without password)
     return User(
         id=user_id,
         email=user.email,
-        created_at=created_user["created_at"], 
+        created_at=created_user["created_at"],
     )
 
 
@@ -206,19 +204,27 @@ async def login(user_credentials: UserLogin):
     """Login user and return access token"""
     # Get user from database
     user = await get_user_by_email(user_credentials.email)
-    if not user or not verify_password(user_credentials.password, user["hashed_password"]):
+    if not user or not verify_password(
+        user_credentials.password, user["hashed_password"]
+    ):
         raise HTTPException(
             status_code=401,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    # Create access token with different expiration based on remember_me
+    if user_credentials.remember_me:
+        # Extended token for 30 days when remember me is checked
+        access_token_expires = timedelta(days=30)
+    else:
+        # Standard token expiration
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     access_token = create_access_token(
         data={"sub": user["_id"]}, expires_delta=access_token_expires
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -228,10 +234,12 @@ async def get_current_user_info(current_user_id: str = Depends(get_current_user)
     user = await get_user_by_id(current_user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
+    # Parse the ISO string back to datetime
+    created_at = datetime.fromisoformat(user["created_at"])
+
     return User(
         id=user["_id"],
         email=user["email"],
+        created_at=created_at,
     )
-
-

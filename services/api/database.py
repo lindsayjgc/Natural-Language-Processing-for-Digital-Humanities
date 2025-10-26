@@ -38,8 +38,10 @@ def get_documents():
 def get_document_stats():
     return get_db().document_stats
 
+
 def get_users():
     return get_db().users
+
 
 async def get_user_documents(user_id: str) -> List[Dict]:
     """Get all documents for a user"""
@@ -122,6 +124,7 @@ async def get_document(document_id: str, user_id: str) -> Optional[Dict]:
 
     return item
 
+
 # User management
 async def create_user(email: str, hashed_password: str) -> str:
     """Create a new user and return user ID"""
@@ -150,10 +153,11 @@ async def get_user_by_id(user_id: str) -> Optional[Dict]:
     user = await get_users().find_one({"_id": ObjectId(user_id)})
     if user:
         user["_id"] = str(user["_id"])
-        # Convert datetime to string 
+        # Convert datetime to string
         if "created_at" in user and user["created_at"]:
             user["created_at"] = user["created_at"].isoformat()
     return user
+
 
 async def test_connection():
     """Test MongoDB connection"""
