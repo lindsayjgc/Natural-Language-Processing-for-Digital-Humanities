@@ -20,7 +20,6 @@ export function DocumentsView() {
   const { user } = useAuth();
   const userId = user?.id;
 
-
   const fetchDocuments = useCallback(async () => {
     if (!userId) return; // prevent calling with undefined
     try {
