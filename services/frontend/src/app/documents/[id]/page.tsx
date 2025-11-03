@@ -3,6 +3,7 @@
 import { ArrowLeft, Calendar } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,10 +24,15 @@ export default function DocumentDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Mock user ID - in a real app this would come from auth
-  const userId = "demo_user";
+  // const userId = "demo_user";
+  const { user } = useAuth();
+  const userId = user?.id;
+
   const documentId = params.id as string;
 
   const fetchDocument = useCallback(async () => {
+    if (!userId) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -37,7 +43,7 @@ export default function DocumentDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [documentId]);
+  }, [documentId, userId]);
 
   useEffect(() => {
     fetchDocument();
