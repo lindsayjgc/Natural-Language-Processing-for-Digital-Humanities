@@ -1,5 +1,5 @@
 // API client for NLP Document Library backend
-import { getAuthToken } from './auth';
+import { getAuthToken } from "./auth";
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface Document {
