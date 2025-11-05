@@ -2,11 +2,17 @@
 pandas
 numpy
 nltk
+pathlib
+argparse
+textwrap
+json
 
 # NLP
 spacy
 transformers
 torch
+en-core-web-sm  # required spaCy model
+sentencepiece   # required by many transformer tokenizers
 
 # Document I/O (optional but recommended for .doc/.pdf/.rtf support)
 docx2txt
@@ -24,3 +30,6 @@ python-dotenv
 python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
+
+# Utility / CLI
+tqdm             # for progress display (optional but useful)
