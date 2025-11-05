@@ -1,14 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import {
-  User,
-  LoginCredentials,
-  RegisterData,
   authApi,
   getAuthToken,
-  setAuthToken,
+  type LoginCredentials,
+  type RegisterData,
   removeAuthToken,
+  setAuthToken,
+  type User,
 } from "@/lib/auth";
 
 interface AuthContextType {
@@ -43,7 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authApi.register(userData);
       // After successful registration, log the user in
-      await login({ email: userData.email, password: userData.password, remember_me: userData.remember_me });
+      await login({
+        email: userData.email,
+        password: userData.password,
+        remember_me: userData.remember_me,
+      });
     } catch (error) {
       throw error;
     }

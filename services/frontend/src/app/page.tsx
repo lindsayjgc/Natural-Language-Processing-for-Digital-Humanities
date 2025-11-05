@@ -1,21 +1,21 @@
 "use client";
 
-import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { DocumentsView } from "@/components/documents/DocumentsView";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { AuthDialog } from "@/components/auth/AuthDialog";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import {
-  BookOpen,
-  Sparkles,
   BarChart3,
-  FileText,
+  BookOpen,
   Brain,
+  FileText,
+  Sparkles,
   TrendingUp,
   Users,
 } from "lucide-react";
+import { useState } from "react";
+import { AuthDialog } from "@/components/auth/AuthDialog";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { DocumentsView } from "@/components/documents/DocumentsView";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 function LandingPage() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
@@ -107,7 +107,9 @@ function LandingPage() {
               <div className="mb-6">
                 <feature.icon className="h-12 w-12 mx-auto text-violet-600" />
               </div>
-              <h3 className="font-semibold text-xl mb-4 text-gray-900">{feature.title}</h3>
+              <h3 className="font-semibold text-xl mb-4 text-gray-900">
+                {feature.title}
+              </h3>
               <p className="text-gray-600 leading-relaxed">
                 {feature.description}
               </p>

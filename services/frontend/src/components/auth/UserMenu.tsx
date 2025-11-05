@@ -1,7 +1,7 @@
 "use client";
 
+import { LogOut, User } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -20,17 +20,24 @@ export function UserMenu() {
   if (!user) return null;
 
   // Extract name from email (part before @) or use first letter
-  const displayName = user.email.split('@')[0];
+  const displayName = user.email.split("@")[0];
   const initials = displayName.substring(0, 2).toUpperCase();
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-auto px-3 rounded-full">
+        <Button
+          variant="ghost"
+          className="relative h-8 w-auto px-3 rounded-full"
+        >
           <div className="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center">
-            <span className="text-sm font-medium text-violet-700">{initials}</span>
+            <span className="text-sm font-medium text-violet-700">
+              {initials}
+            </span>
           </div>
-          <span className="ml-2 text-sm text-gray-700 hidden sm:block">{displayName}</span>
+          <span className="ml-2 text-sm text-gray-700 hidden sm:block">
+            {displayName}
+          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
