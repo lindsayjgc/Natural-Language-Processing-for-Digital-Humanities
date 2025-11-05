@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { AuthDialog } from "@/components/auth/AuthDialog";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { UserMenu } from "@/components/auth/UserMenu";
-import { AuthDialog } from "@/components/auth/AuthDialog";
-import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function TopBar() {
   const { isAuthenticated, isLoading } = useAuth();

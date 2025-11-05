@@ -28,7 +28,9 @@ export function DocumentsView() {
       const response = await apiClient.getUserDocuments(userId);
       setDocuments(response.documents);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch documents");
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch documents",
+      );
     } finally {
       setLoading(false);
     }

@@ -113,16 +113,23 @@ async def get_document(document_id: str, user_id: str) -> Optional[Dict]:
         stats = await get_document_stats().find_one({"_id": ObjectId(item["stats_id"])})
         if stats:
             stats["_id"] = str(stats["_id"])
-            # Convert any other ObjectIds in stats to strings
-            for key, value in stats.items():
-                if (
-                    hasattr(value, "__class__")
-                    and value.__class__.__name__ == "ObjectId"
-                ):
-                    stats[key] = str(value)
+            # Recursively convert any ObjectIds in stats to strings
+            stats = _convert_objectids_recursive(stats)
             item["stats"] = stats
 
     return item
+
+
+def _convert_objectids_recursive(obj):
+    """Recursively convert ObjectIds to strings in nested structures"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: _convert_objectids_recursive(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_convert_objectids_recursive(item) for item in obj]
+    else:
+        return obj
 
 
 # User management

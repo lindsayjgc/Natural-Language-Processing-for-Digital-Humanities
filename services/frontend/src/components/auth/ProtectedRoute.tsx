@@ -1,8 +1,8 @@
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -30,10 +30,12 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
 
   if (!isAuthenticated) {
     // Show fallback if provided, otherwise redirect
-    return fallback || (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
+    return (
+      fallback || (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      )
     );
   }
 
