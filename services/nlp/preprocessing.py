@@ -6,7 +6,8 @@ from collections import Counter
 _SPACY_OK = False
 try:
     import spacy
-    _nlp = spacy.load("en_core_web_sm", exclude=["parser", "ner", "textcat"])
+    # do not exclude ner
+    _nlp = spacy.load("en_core_web_sm", exclude=["parser", "textcat"])
     # Add a basic sentence splitter if not already present
     if "sentencizer" not in _nlp.pipe_names:
         _nlp.add_pipe("sentencizer")
@@ -151,6 +152,20 @@ def process_text(text: str,
     token_count = len(lemmas)
     ttr = (vocab_size / token_count) if token_count else 0.0
 
+    people, places, entities = [], [], []
+    if _SPACY_OK:
+        try:
+            doc = _nlp(text)
+            for ent in doc.ents:
+                # store entity text, label, and token offsets instead of character offsets
+                entities.append((ent.text, ent.label_, ent.start, ent.end))
+                if ent.label_ == "PERSON":
+                    people.append((ent.text, ent.start, ent.end))
+                elif ent.label_ in {"GPE", "LOC"}:
+                    places.append((ent.text, ent.start, ent.end))
+        except Exception:
+            pass
+
     # Return a structured analysis
     return {
         "sentences": sentences,
@@ -161,5 +176,8 @@ def process_text(text: str,
         "freq_lemmas": freq_lemmas,
         "vocab_size": vocab_size,
         "token_count": token_count,
-        "type_token_ratio": ttr
+        "type_token_ratio": ttr,
+        "entities": entities,  # (text, label, start_char, end_char)
+        "people": people,      # (text, start_char, end_char)
+        "places": places      # (text, start_char, end_char)
     }

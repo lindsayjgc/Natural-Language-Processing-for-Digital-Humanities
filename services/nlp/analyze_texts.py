@@ -64,6 +64,7 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
     prep = process_text(text)
     ngram_counts = count_ngrams(prep["lemmas"], ngram_ns)
     pos_counts   = count_pos(prep["pos_seq"])
+
     doc_sent, sent_df, sent_method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
 
     outdir.mkdir(parents=True, exist_ok=True)
@@ -80,6 +81,27 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
     # POS
     pos_df = pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS","count"])
     pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
+
+    # Entities (all, people, and places)
+    if prep.get("entities"):
+        ent_df = pd.DataFrame(prep["entities"], columns=["Entity", "Label", "StartToken", "EndToken"])
+        ent_df.to_csv(outdir / f"{tag}_entities.csv", index=False)
+        if not ent_df.empty:
+            entity_counts = (
+                ent_df.groupby(["Entity", "Label"])
+                .size()
+                .reset_index(name="Count")
+                .sort_values(["Label", "Count"], ascending=[True, False])
+            )
+            entity_counts.to_csv(outdir / f"{tag}_entity_frequencies.csv", index=False)
+
+    if prep.get("people"):
+        ppl_df = pd.DataFrame(prep["people"], columns=["Person", "StartToken", "EndToken"])
+        ppl_df.to_csv(outdir / f"{tag}_people.csv", index=False)
+
+    if prep.get("places"):
+        plc_df = pd.DataFrame(prep["places"], columns=["Location", "StartToken", "EndToken"])
+        plc_df.to_csv(outdir / f"{tag}_locations.csv", index=False)
 
     # Metadata summary
     meta = {
