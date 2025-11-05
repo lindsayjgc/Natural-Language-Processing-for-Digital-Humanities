@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
+
+from preprocess import nlp  # import the global nlp object
 from summarize import abstractive_summarize
-from preprocess import count_sentences
+
 
 def process_file(ipath: Path, outdir: Path, model_name: str,
                  max_length: int, min_length: int):
@@ -17,12 +19,15 @@ def process_file(ipath: Path, outdir: Path, model_name: str,
         min_length=min_length
     )
 
+    # Use nlp.pipe() to batch texts efficiently
+    input_doc, summary_doc = list(nlp.pipe([text, summary]))
+
     meta = {
         "file_name": ipath.name,
         "file_path": str(ipath.resolve()),
         "model": model_name,
-        "input_sentence_count": count_sentences(text),
-        "summary_sentence_count": count_sentences(summary),
+        "input_sentence_count": len(list(input_doc.sents)),
+        "summary_sentence_count": len(list(summary_doc.sents)),
         "max_length": max_length,
         "min_length": min_length,
         "summary_text": summary

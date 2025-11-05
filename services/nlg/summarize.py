@@ -3,19 +3,44 @@ from transformers import pipeline
 import torch
 from preprocess import preprocess_text
 
-def abstractive_summarize(text: str, model_name="pszemraj/led-large-book-summary",
-                          max_length=240, min_length=80, device=None):
+def abstractive_summarize(
+    text: str,
+    model_name: str = "pszemraj/led-large-book-summary",
+    max_length: int = 240,
+    min_length: int = 80,
+    device: int | None = None,
+    summarizer=None
+) -> str:
+    """
+    Generate an abstractive summary of the given text using a transformer summarization model.
+
+    If a summarizer pipeline is provided, it will be reused instead of reloaded.
+
+    Args:
+        text: Input text to summarize.
+        model_name: Hugging Face model name for summarization.
+        max_length: Max tokens per summary chunk.
+        min_length: Min tokens per summary chunk.
+        device: Device ID (0 = GPU, -1 = CPU). Auto-detected if None.
+        summarizer: Optional preloaded Hugging Face pipeline.
+
+    Returns:
+        The combined abstractive summary.
+    """
     if device is None:
         device = 0 if torch.cuda.is_available() else -1
 
-    summarizer = pipeline(
-        "summarization",
-        model=model_name,
-        tokenizer=model_name,
-        device=device
-    )
+    # Load summarizer only if not provided
+    if summarizer is None:
+        summarizer = pipeline(
+            "summarization",
+            model=model_name,
+            tokenizer=model_name,
+            device=device
+        )
 
     clean_text = preprocess_text(text)
+    # Chunk size of 3500 characters is chosen to stay within the model's input limit (e.g., LED model's max input length).
     chunks = wrap(clean_text, 3500)
     partials = []
 
