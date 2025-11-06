@@ -108,7 +108,9 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
         "sentiment_method": sent_method,
         "doc_sentiment": doc_sent,
         "vocab_size": prep["vocab_size"],
-        "token_count": prep["token_count"],
+        "word_count": len(prep.get("tokens", [])),
+        "sentence_count": len(prep.get("sentences", [])),
+        "char_count": len(text),
         "type_token_ratio": prep["type_token_ratio"],
     }
     (outdir / f"{tag}_summary.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
