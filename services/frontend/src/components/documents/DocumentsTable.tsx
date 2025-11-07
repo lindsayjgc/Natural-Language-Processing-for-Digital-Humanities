@@ -113,7 +113,9 @@ export function DocumentsTable({
               </TableCell>
             </TableRow>
           ) : (
-            documents.map((doc) => (
+            documents
+            .filter((doc) => doc.status === "completed")
+            .map((doc) => (
               <TableRow
                 key={doc._id}
                 className={`border-black/10 ${
