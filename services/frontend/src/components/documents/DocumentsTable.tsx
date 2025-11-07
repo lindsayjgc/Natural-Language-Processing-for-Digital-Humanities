@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Document } from "@/lib/api";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"; 
 
 type DocumentsTableProps = {
   documents: Document[];
@@ -33,6 +41,14 @@ export function DocumentsTable({
     if (doc.status === "completed") {
       router.push(`/documents/${doc._id}`);
     }
+  };
+
+  const handleEdit = (doc: Document) => {
+
+  };
+
+  const handleDelete = (doc: Document) => {
+
   };
 
   const getStatusBadge = (status: string) => {
@@ -114,39 +130,69 @@ export function DocumentsTable({
             </TableRow>
           ) : (
             documents
-            .filter((doc) => doc.status === "completed")
-            .map((doc) => (
-              <TableRow
-                key={doc._id}
-                className={`border-black/10 ${
-                  doc.status === "completed"
-                    ? "cursor-pointer hover:bg-gray-50 transition-colors"
-                    : "cursor-default"
-                }`}
-                onClick={() => handleRowClick(doc)}
-              >
-                <TableCell className="text-gray-900">{doc.filename}</TableCell>
-                <TableCell className="text-gray-700">
-                  {formatDate(doc.uploaded_at)}
-                </TableCell>
-                <TableCell className="text-gray-700">
-                  {getStatusBadge(doc.status)}
-                </TableCell>
-                <TableCell className="text-right">
-                  {doc.status === "completed" ? (
-                    <span className="text-violet-600 hover:underline">
-                      View Analysis →
-                    </span>
-                  ) : doc.status === "failed" ? (
-                    <span className="text-red-600 text-sm">
-                      {doc.error || "Processing failed"}
-                    </span>
-                  ) : (
-                    <span className="text-gray-500 text-sm">Processing...</span>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
+              .filter((doc) => doc.status === "completed")
+              .map((doc) => (
+                <TableRow
+                  key={doc._id}
+                  onClick={() => handleRowClick(doc)}
+                  className={`border-black/10 ${doc.status === "completed"
+                      ? "cursor-pointer hover:bg-gray-50 transition-colors"
+                      : "cursor-default"
+                    }`}
+                >
+                  <TableCell className="text-gray-900">
+                    {doc.filename}
+                  </TableCell>
+                  <TableCell className="text-gray-700">
+                    {formatDate(doc.uploaded_at)}
+                  </TableCell>
+                  <TableCell className="text-gray-700">
+                    {getStatusBadge(doc.status)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-gray-800 cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRowClick(doc);
+                          }}
+                        >
+                          View Analysis
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(doc);
+                          }}
+                        >
+                          Edit Name
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(doc);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
           )}
         </TableBody>
       </Table>
