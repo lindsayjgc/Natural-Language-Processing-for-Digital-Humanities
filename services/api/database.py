@@ -119,6 +119,43 @@ async def get_document(document_id: str, user_id: str) -> Optional[Dict]:
 
     return item
 
+async def update_document_metadata(
+    document_id: str, user_id: str, filename: str = None
+) -> bool:
+    """Update document metadata like filename"""
+    update_data = {}
+    if filename:
+        update_data["filename"] = filename
+    
+    if not update_data:
+        return False
+    
+    result = await get_documents().update_one(
+        {"_id": ObjectId(document_id), "user_id": user_id},
+        {"$set": update_data}
+    )
+    return result.modified_count > 0
+
+
+async def delete_document_by_id(document_id: str, user_id: str) -> bool:
+    """Delete a document and its associated stats"""
+    document = await get_documents().find_one(
+        {"_id": ObjectId(document_id), "user_id": user_id}
+    )
+    
+    if not document:
+        return False
+    
+    if "stats_id" in document and document["stats_id"]:
+        await get_document_stats().delete_one({"_id": document["stats_id"]})
+    
+    result = await get_documents().delete_one(
+        {"_id": ObjectId(document_id), "user_id": user_id}
+    )
+    
+    return result.deleted_count > 0
+
+
 
 def _convert_objectids_recursive(obj):
     """Recursively convert ObjectIds to strings in nested structures"""

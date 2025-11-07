@@ -106,6 +106,34 @@ export function DocumentsView() {
     throw new Error("Document processing timed out after 30 seconds");
   };
 
+  const handleUpdateDocument = async (id: string, newName: string) => {
+    if (!userId) return;
+    
+    try {
+      setError(null);
+      await apiClient.updateDocument(userId, id, newName);
+      await fetchDocuments();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to update document",
+      );
+    }
+  };
+
+  const handleDeleteDocument = async (id: string) => {
+    if (!userId) return;
+    
+    try {
+      setError(null);
+      await apiClient.deleteDocument(userId, id);
+      await fetchDocuments();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete document",
+      );
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-56px)] bg-gray-50 text-gray-900">
       <main className="mx-auto max-w-6xl px-4 py-10">
@@ -131,23 +159,14 @@ export function DocumentsView() {
             </div>
           </div>
         )}
+        
         <FiltersBar />
         <DocumentsTable
           documents={documents}
           loading={loading}
           onRefresh={fetchDocuments}
-          onUpdateDocument={async (id, newName) => {
-            // Make API call to update document
-            console.log("bruh")
-            // Refresh the documents list
-            await fetchDocuments();
-          }}
-          onDeleteDocument={async (id) => {
-            // Make API call to delete document
-            console.log("bruh")
-            // Refresh the documents list
-            await fetchDocuments();
-  }}
+          onUpdateDocument={handleUpdateDocument}
+          onDeleteDocument={handleDeleteDocument}
         />
       </main>
     </div>

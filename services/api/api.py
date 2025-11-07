@@ -216,6 +216,84 @@ async def get_document_by_id(user_id: str, document_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get document: {str(e)}")
+    
+@app.put("/documents/{user_id}/{document_id}")
+async def update_document_endpoint(
+    user_id: str,
+    document_id: str,
+    filename: str = None,
+    current_user_id: str = Depends(get_current_user)
+):
+    """Update document metadata (e.g., rename)"""
+    # Verify the user owns this document
+    if current_user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to update this document"
+        )
+    
+    try:
+        from services.api.database import update_document_metadata
+        
+        success = await update_document_metadata(
+            document_id, user_id, filename=filename
+        )
+        
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found or no changes made"
+            )
+        
+        updated_doc = await get_document(document_id, user_id)
+        if not updated_doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        updated_doc = convert_to_native_types(updated_doc)
+        return updated_doc
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update document: {str(e)}"
+        )
+
+
+@app.delete("/documents/{user_id}/{document_id}")
+async def delete_document_endpoint(
+    user_id: str,
+    document_id: str,
+    current_user_id: str = Depends(get_current_user)
+):
+    """Delete a document and its associated stats"""
+    if current_user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Not authorized to delete this document"
+        )
+    
+    try:
+        from services.api.database import delete_document_by_id
+        
+        success = await delete_document_by_id(document_id, user_id)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        return {
+            "success": True,
+            "message": "Document deleted successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete document: {str(e)}"
+        )
 
 
 # Authentication endpoints
