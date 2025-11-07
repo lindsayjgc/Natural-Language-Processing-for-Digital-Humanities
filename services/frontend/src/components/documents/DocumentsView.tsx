@@ -136,6 +136,18 @@ export function DocumentsView() {
           documents={documents}
           loading={loading}
           onRefresh={fetchDocuments}
+          onUpdateDocument={async (id, newName) => {
+            // Make API call to update document
+            console.log("bruh")
+            // Refresh the documents list
+            await fetchDocuments();
+          }}
+          onDeleteDocument={async (id) => {
+            // Make API call to delete document
+            console.log("bruh")
+            // Refresh the documents list
+            await fetchDocuments();
+  }}
         />
       </main>
     </div>
