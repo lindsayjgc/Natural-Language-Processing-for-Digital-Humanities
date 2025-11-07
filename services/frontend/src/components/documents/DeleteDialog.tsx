@@ -27,7 +27,6 @@ export function DeleteDocumentDialog({
 
   const handleDelete = async () => {
     if (!document) return;
-
     setLoading(true);
     try {
       await onDelete(document._id);
@@ -47,19 +46,26 @@ export function DeleteDocumentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-md sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Delete Document</DialogTitle>
-          <DialogDescription>
-            Are you sure you want to delete "{document?.filename}"? This action
-            cannot be undone.
+          <DialogDescription className="space-y-2">
+            <span className="block">Are you sure you want to delete</span>
+            <span
+              className="font-semibold block break-all text-foreground"
+              title={document?.filename}
+            >
+              "{document?.filename}"
+            </span>
+            <span className="block">This action cannot be undone.</span>
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
           <Button
             variant="outline"
             onClick={() => handleOpenChange(false)}
             disabled={loading}
+            className="w-full sm:w-auto"
           >
             Cancel
           </Button>
@@ -67,7 +73,7 @@ export function DeleteDocumentDialog({
             variant="destructive"
             onClick={handleDelete}
             disabled={loading}
-            className="bg-violet-600"
+            className="bg-violet-600 hover:bg-violet-700 w-full sm:w-auto"
           >
             {loading ? "Deleting..." : "Delete"}
           </Button>
