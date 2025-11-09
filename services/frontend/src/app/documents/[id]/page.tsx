@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -480,78 +481,165 @@ export default function DocumentDetailPage() {
               <TabsContent value="sentiment" className="space-y-6">
                 {/* Document-Level Sentiment Analysis */}
                 <Card>
-                  <CardHeader className="p-4 pb-3">
-                    <CardTitle className="text-base">
+                  <CardHeader className="p-6 pb-4">
+                    <CardTitle className="text-lg">
                       Document Sentiment
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-3 pt-0">
-                    <div className="space-y-1.5">
-                      {Object.entries(stats.doc_sentiment)
-                        .sort(([, a], [, b]) => (b as number) - (a as number))
+                  <CardContent className="p-6">
+                    {/* Helper function to get sentiment colors as hex values */}
+                    {(() => {
+                      const getSentimentColor = (emotionName: string): string => {
+                        const normalized = emotionName.toLowerCase();
+                        if (
+                          normalized.includes("positive") ||
+                          normalized.includes("joy") ||
+                          normalized.includes("happy")
+                        ) {
+                          return "#10B981"; // emerald-500
+                        }
+                        if (
+                          normalized.includes("negative") ||
+                          normalized.includes("sad") ||
+                          normalized.includes("anger")
+                        ) {
+                          return "#EF4444"; // rose-500
+                        }
+                        if (normalized.includes("neutral")) {
+                          return "#9CA3AF"; // gray-400
+                        }
+                        if (normalized.includes("fear")) {
+                          return "#8B5CF6"; // violet-500
+                        }
+                        if (normalized.includes("surprise")) {
+                          return "#F59E0B"; // amber-500
+                        }
+                        if (normalized.includes("disgust")) {
+                          return "#F97316"; // orange-500
+                        }
+                        // Default to slate for unknown emotions
+                        return "#64748B"; // slate-500
+                      };
+
+                      const getSentimentLabel = (emotionName: string): string => {
+                        return emotionName
+                          .toLowerCase()
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase());
+                      };
+
+                      // Transform sentiment data for pie chart
+                      const pieData = Object.entries(stats.doc_sentiment)
                         .map(([emotion, score]) => {
-                          const scoreValue =
-                            typeof score === "number" ? score : 0;
-                          const percentage = scoreValue * 100;
-                          const emotionKey = emotion
-                            .toLowerCase()
-                            .replace(/_/g, " ");
-
-                          // Color coding for different sentiment types - modern, muted palette
-                          const getSentimentColors = (emotionName: string) => {
-                            const normalized = emotionName.toLowerCase();
-                            if (
-                              normalized.includes("positive") ||
-                              normalized.includes("joy") ||
-                              normalized.includes("happy")
-                            ) {
-                              return { bar: "bg-emerald-400", bg: "bg-emerald-400/20" };
-                            }
-                            if (
-                              normalized.includes("negative") ||
-                              normalized.includes("sad") ||
-                              normalized.includes("anger")
-                            ) {
-                              return { bar: "bg-rose-400", bg: "bg-rose-400/20" };
-                            }
-                            if (normalized.includes("neutral")) {
-                              return { bar: "bg-zinc-400", bg: "bg-zinc-400/20" };
-                            }
-                            if (normalized.includes("fear")) {
-                              return { bar: "bg-violet-400", bg: "bg-violet-400/20" };
-                            }
-                            if (normalized.includes("surprise")) {
-                              return { bar: "bg-amber-400", bg: "bg-amber-400/20" };
-                            }
-                            if (normalized.includes("disgust")) {
-                              return { bar: "bg-orange-400", bg: "bg-orange-400/20" };
-                            }
-                            // Default to slate for unknown emotions
-                            return { bar: "bg-slate-400", bg: "bg-slate-400/20" };
+                          const scoreValue = typeof score === "number" ? score : 0;
+                          return {
+                            name: getSentimentLabel(emotion),
+                            value: scoreValue * 100,
+                            color: getSentimentColor(emotion),
+                            emotion: emotion,
                           };
+                        })
+                        .filter((item) => item.value > 0)
+                        .sort((a, b) => b.value - a.value);
 
-                          const colors = getSentimentColors(emotion);
-
-                          return (
-                            <div key={emotion} className="grid grid-cols-[80px_1fr_auto] gap-4 items-center">
-                              <span className={`text-xs font-medium capitalize shrink-0 ${colors.bar.replace('bg-', 'text-')}`}>
-                                {emotionKey}
-                              </span>
-                              <div
-                                className={`h-3 rounded overflow-hidden border border-border/50 ${colors.bg}`}
-                              >
-                                <div
-                                  className={`${colors.bar} h-full transition-all duration-500 ease-out`}
-                                  style={{ width: `${percentage}%` }}
+                      return (
+                        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
+                          <div className="w-full md:w-80 h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Tooltip
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length > 0) {
+                                      const data = payload[0];
+                                      // Try to get color from payload, or derive it from emotion/name
+                                      let color = data.payload?.color;
+                                      if (!color && data.payload?.emotion) {
+                                        // Fallback: derive color from emotion name
+                                        const emotionName = data.payload.emotion.toLowerCase();
+                                        if (emotionName.includes("positive") || emotionName.includes("joy") || emotionName.includes("happy")) {
+                                          color = "#10B981";
+                                        } else if (emotionName.includes("negative") || emotionName.includes("sad") || emotionName.includes("anger")) {
+                                          color = "#EF4444";
+                                        } else if (emotionName.includes("neutral")) {
+                                          color = "#9CA3AF";
+                                        } else if (emotionName.includes("fear")) {
+                                          color = "#8B5CF6";
+                                        } else if (emotionName.includes("surprise")) {
+                                          color = "#F59E0B";
+                                        } else if (emotionName.includes("disgust")) {
+                                          color = "#F97316";
+                                        } else {
+                                          color = "#64748B";
+                                        }
+                                      }
+                                      color = color || "#64748B";
+                                      const name = data.name || "Unknown";
+                                      const value = typeof data.value === "number" ? data.value : 0;
+                                      
+                                      return (
+                                        <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
+                                          <div className="flex items-center gap-2 mb-1.5">
+                                            <div
+                                              className="w-3 h-3 rounded-full shrink-0"
+                                              style={{
+                                                backgroundColor: color,
+                                              }}
+                                            />
+                                            <span className="font-semibold text-sm">
+                                              {name}
+                                            </span>
+                                          </div>
+                                          <div className="text-sm text-muted-foreground tabular-nums">
+                                            {value.toFixed(1)}%
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                  cursor={{ fill: "rgba(0, 0, 0, 0.05)" }}
                                 />
-                              </div>
-                              <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                                {percentage.toFixed(1)}%
-                              </span>
+                                <Pie
+                                  data={pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  outerRadius={120}
+                                  paddingAngle={2}
+                                  dataKey="value"
+                                  strokeWidth={2}
+                                  stroke="#fff"
+                                >
+                                  {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-col gap-3">
+                              {pieData.map((item) => (
+                                <div
+                                  key={item.emotion}
+                                  className="flex items-center gap-3"
+                                >
+                                  <div
+                                    className="w-4 h-4 rounded-full shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span className="text-sm font-medium capitalize flex-1">
+                                    {item.name}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground tabular-nums">
+                                    {item.value.toFixed(1)}%
+                                  </span>
+                                </div>
+                              ))}
                             </div>
-                          );
-                        })}
-                    </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
 
