@@ -59,84 +59,116 @@ def _hash_stem(path: Path) -> str:
 
 
 # ---- core analysis pipeline ----
-def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sent_threshold, max_sentences, write_csv=True):
+def _analyze_text_blob(
+    text: str,
+    tag: str,
+    outdir: Path,
+    *,
+    ngram_ns,
+    topn,
+    sent_threshold,
+    max_sentences,
+    write_csv: bool = True,
+):
     """
     Run NLP analysis on raw text and optionally write CSV/JSON outputs.
-    
+
     Args:
-        write_csv: If True, write CSV files to outdir (useful for CLI). If False, skip CSV generation (faster for API usage).
+        write_csv: If True, write CSV files to outdir (useful for CLI).
+                   If False, skip CSV generation (faster for API usage).
     """
+    # --- core NLP processing ---
     prep = process_text(text)
     ngram_counts = count_ngrams(prep["lemmas"], ngram_ns)
-    pos_counts   = count_pos(prep["pos_seq"])
+    pos_counts = count_pos(prep["pos_seq"])
 
-    doc_sent, sent_df, sent_method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
+    doc_sent, sent_df, sent_method = analyze_sentiment(
+        text,
+        sent_threshold=sent_threshold,
+        max_sentences=max_sentences,
+    )
 
+    # --- derived stats for JSON / return value ---
+    vocab_size = prep["vocab_size"]
+    token_count = prep["token_count"]          # <- matches frontend
+    type_token_ratio = prep["type_token_ratio"]
+
+    # Top word frequencies as list[{"lemma", "count"}]
+    freq_lemmas = prep["freq_lemmas"]
+    word_frequencies = [
+        {"lemma": lemma, "count": int(count)}
+        for lemma, count in freq_lemmas.most_common(topn)
+    ]
+
+    # N-grams as {name: [{"ngram", "count"}, ...]}
+    ngrams_data = {}
+    for name, counter in ngram_counts.items():
+        ngrams_data[name] = [
+            {"ngram": ngram, "count": int(count)}
+            for ngram, count in counter.most_common(topn)
+        ]
+
+    # POS counts as plain dict
+    pos_counts_dict = {pos: int(c) for pos, c in pos_counts.items()}
+
+    # Sentence-level sentiment as list[dict]
+    sentence_sentiment = sent_df.to_dict(orient="records")
+
+    # --- analysis_results (JSON-friendly, NO entities) ---
+    analysis_results = {
+        "tag": tag,
+        "sentiment_method": sent_method,
+        "doc_sentiment": doc_sent,                # dict emotion -> score
+        "vocab_size": vocab_size,
+        "token_count": token_count,               # <- key matches TS
+        "type_token_ratio": type_token_ratio,
+        "word_frequencies": word_frequencies,     # list[{lemma,count}]
+        "ngrams": ngrams_data,                    # name -> list[{ngram,count}]
+        "pos_counts": pos_counts_dict,            # POS -> count
+        "sentence_sentiment": sentence_sentiment, # per-sentence rows
+    }
+
+    # --- file outputs (guarded by write_csv) ---
     if write_csv:
         outdir.mkdir(parents=True, exist_ok=True)
 
-        # Word frequencies
-        wf = pd.DataFrame(prep["freq_lemmas"].most_common(topn), columns=["lemma","count"])
+        # Word frequencies CSV
+        wf = pd.DataFrame(word_frequencies, columns=["lemma", "count"])
         wf.to_csv(outdir / f"{tag}_wordfreq_top{topn}.csv", index=False)
 
-        # N-grams
-        for name, counter in ngram_counts.items():
-            top = pd.DataFrame(counter.most_common(topn), columns=[name,"count"])
-            top.to_csv(outdir / f"{tag}_{name}_top{topn}.csv", index=False)
+        # N-gram CSVs
+        for name, rows in ngrams_data.items():
+            top_df = pd.DataFrame(rows, columns=[name, "count"])
+            top_df.to_csv(outdir / f"{tag}_{name}_top{topn}.csv", index=False)
 
-        # POS
-        pos_df = pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS","count"])
+        # POS counts CSV
+        pos_df = pd.DataFrame(
+            sorted(pos_counts_dict.items(), key=lambda x: (-x[1], x[0])),
+            columns=["POS", "count"],
+        )
         pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
 
-    # Entities (all, people, and places)
-    if prep.get("entities"):
-        ent_df = pd.DataFrame(prep["entities"], columns=["Entity", "Label", "StartToken", "EndToken"])
-        ent_df.to_csv(outdir / f"{tag}_entities.csv", index=False)
-        if not ent_df.empty:
-            entity_counts = (
-                ent_df.groupby(["Entity", "Label"])
-                .size()
-                .reset_index(name="Count")
-                .sort_values(["Label", "Count"], ascending=[True, False])
-            )
-            entity_counts.to_csv(outdir / f"{tag}_entity_frequencies.csv", index=False)
 
-    if prep.get("people"):
-        ppl_df = pd.DataFrame(prep["people"], columns=["Person", "StartToken", "EndToken"])
-        ppl_df.to_csv(outdir / f"{tag}_people.csv", index=False)
-
-    if prep.get("places"):
-        plc_df = pd.DataFrame(prep["places"], columns=["Location", "StartToken", "EndToken"])
-        plc_df.to_csv(outdir / f"{tag}_locations.csv", index=False)
-
-    # Metadata summary
-    meta = {
-        "sentiment_method": sent_method,
-        "doc_sentiment": doc_sent,
-        "vocab_size": prep["vocab_size"],
-        "word_count": len(prep.get("tokens", [])),
-        "sentence_count": len(prep.get("sentences", [])),
-        "char_count": len(text),
-        "type_token_ratio": prep["type_token_ratio"],
-        "word_frequencies": word_frequencies,
-        "ngrams": ngrams_data,
-        "pos_counts": pos_counts_dict,
-        "sentence_sentiment": sentence_sentiment,
-    }
-    if write_csv:
-        (outdir / f"{tag}_summary.json").write_text(json.dumps(analysis_results, ensure_ascii=False, indent=2), encoding="utf-8")
-
-        # Sentence-level sentiment
-        sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
+        # Sentence-level sentiment CSV
+        if not sent_df.empty:
+            sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
 
         # Vertical doc-level emotion scores
         lines = ["emotion,score"]
         for emo, score in sorted(doc_sent.items(), key=lambda kv: -kv[1]):
             lines.append(f"{emo},{score:.12f}")
-        (outdir / f"{tag}_doc_emotion_vertical.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        (outdir / f"{tag}_doc_emotion_vertical.csv").write_text(
+            "\n".join(lines) + "\n",
+            encoding="utf-8",
+        )
+
+        # Summary JSON (this is what your backend can return to the frontend)
+        (outdir / f"{tag}_summary.json").write_text(
+            json.dumps(analysis_results, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
     return analysis_results
-
 
 def process_path(ipath: Path,
                  outdir: Path,
