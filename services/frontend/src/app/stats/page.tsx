@@ -91,7 +91,7 @@ export default function StatsPage() {
       }
 
       // Fetch full document details with stats for each completed document
-      const documentsWithStats: Array<{ stats: Document["stats"] }> = [];
+      const documentsWithStats: Array<{ stats: NonNullable<Document["stats"]> }> = [];
       
       // Fetch documents in parallel (batch of 10 at a time)
       const batchSize = 10;
@@ -106,7 +106,7 @@ export default function StatsPage() {
         const batchResults = await Promise.all(batchPromises);
         
         for (const doc of batchResults) {
-          if (doc && doc.stats) {
+          if (doc?.stats) {
             documentsWithStats.push({ stats: doc.stats });
           }
         }
