@@ -2,16 +2,18 @@
 
 import {
   ArrowLeft,
+  Book,
   Calendar,
   FileText,
-  Hash,
+  LetterText,
   MessageSquare,
   Sparkles,
   Tag,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,6 +45,7 @@ export default function DocumentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sentenceLimit, setSentenceLimit] = useState<number>(25);
+  const [wordLimit, setWordLimit] = useState<number>(25);
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -248,7 +251,7 @@ export default function DocumentDetailPage() {
                   Sentiment
                 </TabsTrigger>
                 <TabsTrigger value="words">
-                  <Hash className="mr-2 h-4 w-4" />
+                  <Book className="mr-2 h-4 w-4" />
                   Words & Grammar
                 </TabsTrigger>
               </TabsList>
@@ -286,8 +289,8 @@ export default function DocumentDetailPage() {
                                     PRON: "Pronoun",
                                     ADJ: "Adjective",
                                     ADV: "Adverb",
-                                    CONJ: "Conjunction",
-                                    PRT: "Particle",
+                                    CCONJ: "Coordinating Conjunction",
+                                    PART: "Particle",
                                     NUM: "Numeral",
                                     X: "Other",
                                     ".": "Punctuation",
@@ -296,6 +299,7 @@ export default function DocumentDetailPage() {
                                     SCONJ: "Subordinating Conjunction",
                                     INTJ: "Interjection",
                                     PUNCT: "Punctuation",
+                                    SYM: "Symbol",
                                   };
                                 const description = posDescriptions[pos] || pos;
                                 return (
@@ -314,9 +318,6 @@ export default function DocumentDetailPage() {
                                         {count.toLocaleString()}
                                       </Badge>
                                     </div>
-                                    <span className="text-xs text-muted-foreground font-mono">
-                                      {pos}
-                                    </span>
                                   </div>
                                 );
                               })}
@@ -330,7 +331,7 @@ export default function DocumentDetailPage() {
                 <div className="space-y-6">
                   <Separator className="my-8" />
                   <div className="flex items-center gap-2">
-                    <Hash className="h-5 w-5 text-primary" />
+                    <LetterText className="h-5 w-5 text-primary" />
                     <h2 className="text-xl font-semibold">Words</h2>
                   </div>
 
@@ -339,30 +340,81 @@ export default function DocumentDetailPage() {
                     stats.word_frequencies.length > 0 && (
                       <Card>
                         <CardHeader className="p-6 pb-4">
-                          <CardTitle>Word Frequencies</CardTitle>
-                          <CardDescription>
-                            Most frequently occurring words (top{" "}
-                            {stats.word_frequencies.length})
-                          </CardDescription>
+                          <div className="flex items-center justify-between gap-4 mb-2">
+                            <div className="flex items-center gap-2">
+                              
+                              <CardTitle>Word Frequencies</CardTitle>
+                            </div>
+                            <Select
+                              value={wordLimit.toString()}
+                              onValueChange={(value) => setWordLimit(Number(value))}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue placeholder="Show" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="10">Top 10</SelectItem>
+                                <SelectItem value="25">Top 25</SelectItem>
+                                <SelectItem value="50">Top 50</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </CardHeader>
                         <CardContent className="p-6">
-                          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {stats.word_frequencies.map((item, index) => (
-                              <div
-                                key={`${item.lemma}-${index}`}
-                                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                          <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={stats.word_frequencies
+                                  .slice(0, wordLimit)
+                                  .map((item: any) => ({
+                                    name: item.lemma,
+                                    value: item.count,
+                                  }))}
+                                margin={{ top: 10, right: 10, left: 0, bottom: 30 }}
                               >
-                                <span className="font-medium text-sm truncate flex-1">
-                                  {item.lemma}
-                                </span>
-                                <Badge
-                                  variant="secondary"
-                                  className="ml-2 shrink-0"
-                                >
-                                  {item.count}
-                                </Badge>
-                              </div>
-                            ))}
+                                <XAxis
+                                  dataKey="name"
+                                  tick={{ fontSize: 10 }}
+                                  tickLine={false}
+                                  axisLine={false}
+                                  interval={0}
+                                  angle={-45}
+                                  textAnchor="end"
+                                />
+                                <YAxis
+                                  tick={{ fontSize: 10 }}
+                                  tickLine={false}
+                                  axisLine={false}
+                                />
+                                <Tooltip
+                                  cursor={{ fill: "#8b5cf633" }}
+                                  content={({ active, payload }) => {
+                                    if (active && payload && payload.length > 0) {
+                                      const data = payload[0].payload; // access the original payload
+                                      const lemma = data.name || "Unknown";
+                                      const count = typeof data.value === "number" ? data.value : 0;
+                                      return (
+                                        <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
+                                          <div className="flex items-center gap-2 mb-1.5">
+                                            <span className="font-semibold text-sm">{lemma}</span>
+                                          </div>
+                                          <div className="text-sm text-muted-foreground tabular-nums">
+                                            {count}
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    return null;
+                                  }}
+                                />
+                                <Bar
+                                  dataKey="value"
+                                  fill="#8b5cf6"
+                                  radius={[4, 4, 0, 0]}
+                                  barSize={Math.max(8, 100 - wordLimit / 2)}
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
                           </div>
                         </CardContent>
                       </Card>
@@ -481,7 +533,8 @@ export default function DocumentDetailPage() {
               <TabsContent value="sentiment" className="space-y-6">
                 {/* Document-Level Sentiment Analysis */}
                 <Card>
-                  <CardHeader className="p-6 pb-4">
+                  <CardHeader className="flex items-center p-6 pb-4">
+                    <PieChartIcon className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">
                       Document Sentiment
                     </CardTitle>
@@ -499,11 +552,15 @@ export default function DocumentDetailPage() {
                           return "#10B981"; // emerald-500
                         }
                         if (
-                          normalized.includes("negative") ||
-                          normalized.includes("sad") ||
                           normalized.includes("anger")
                         ) {
                           return "#EF4444"; // rose-500
+                        }
+                        if (
+                          normalized.includes("negative") ||
+                          normalized.includes("sad")
+                        ) {
+                          return "#3B82F6" ; // blue-500
                         }
                         if (normalized.includes("neutral")) {
                           return "#9CA3AF"; // gray-400
@@ -647,7 +704,7 @@ export default function DocumentDetailPage() {
                 {stats.sentence_sentiment &&
                   stats.sentence_sentiment.length > 0 && (
                     <Card>
-                      <CardHeader className="p-6 pb-4">
+                      <CardHeader className="p-4 pb-3">
                         <div className="flex items-center justify-between gap-4 mb-2">
                           <div className="flex items-center gap-2">
                             <MessageSquare className="h-5 w-5 text-primary" />
@@ -663,10 +720,10 @@ export default function DocumentDetailPage() {
                               <SelectValue placeholder="Show" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="10">Top 10</SelectItem>
-                              <SelectItem value="25">Top 25</SelectItem>
-                              <SelectItem value="50">Top 50</SelectItem>
-                              <SelectItem value="100">Top 100</SelectItem>
+                              <SelectItem value="10">First 10</SelectItem>
+                              <SelectItem value="25">First 25</SelectItem>
+                              <SelectItem value="50">First 50</SelectItem>
+                              <SelectItem value="100">First 100</SelectItem>
                               <SelectItem
                                 value={stats.sentence_sentiment.length.toString()}
                               >
@@ -676,7 +733,7 @@ export default function DocumentDetailPage() {
                           </Select>
                         </div>
                       </CardHeader>
-                                                              <CardContent className="p-4">
+                      <CardContent className="p-3 pt-0">
                       <div className="space-y-1.5">
                         {stats.sentence_sentiment
                           .slice(0, sentenceLimit)
@@ -690,8 +747,11 @@ export default function DocumentDetailPage() {
                                 if (normalized.includes("positive") || normalized.includes("joy") || normalized.includes("happy")) {
                                   return { bar: "bg-emerald-400", bg: "bg-emerald-400/20" };
                                 }
-                                if (normalized.includes("negative") || normalized.includes("sad") || normalized.includes("anger")) {
+                                if (normalized.includes("anger")) {
                                   return { bar: "bg-rose-400", bg: "bg-rose-400/20" };
+                                }
+                                if (normalized.includes("sad") || normalized.includes("negative")) {
+                                  return { bar: "bg-blue-400", bg: "bg-blue-400/20" };
                                 }
                                 if (normalized.includes("neutral")) {
                                   return { bar: "bg-zinc-400", bg: "bg-zinc-400/20" };
