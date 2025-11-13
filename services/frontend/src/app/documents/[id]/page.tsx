@@ -549,7 +549,7 @@ export default function DocumentDetailPage() {
                           normalized.includes("joy") ||
                           normalized.includes("happy")
                         ) {
-                          return "#10B981"; // emerald-500
+                          return "#EAB308"; // yellow-500
                         }
                         if (
                           normalized.includes("anger")
@@ -566,13 +566,13 @@ export default function DocumentDetailPage() {
                           return "#9CA3AF"; // gray-400
                         }
                         if (normalized.includes("fear")) {
-                          return "#8B5CF6"; // violet-500
+                          return "#A855F7"; // purple-500
                         }
                         if (normalized.includes("surprise")) {
-                          return "#F59E0B"; // amber-500
+                          return "#F97316"; // orange-500
                         }
                         if (normalized.includes("disgust")) {
-                          return "#F97316"; // orange-500
+                          return "#10B981"; // emerald-500
                         }
                         // Default to slate for unknown emotions
                         return "#64748B"; // slate-500
@@ -614,17 +614,19 @@ export default function DocumentDetailPage() {
                                         // Fallback: derive color from emotion name
                                         const emotionName = data.payload.emotion.toLowerCase();
                                         if (emotionName.includes("positive") || emotionName.includes("joy") || emotionName.includes("happy")) {
-                                          color = "#10B981";
-                                        } else if (emotionName.includes("negative") || emotionName.includes("sad") || emotionName.includes("anger")) {
+                                          color = "#EAB308";
+                                        } else if (emotionName.includes("anger")) {
                                           color = "#EF4444";
+                                        } else if (emotionName.includes("negative") || emotionName.includes("sad")) {
+                                          return "#3B82F6" ; 
                                         } else if (emotionName.includes("neutral")) {
                                           color = "#9CA3AF";
                                         } else if (emotionName.includes("fear")) {
-                                          color = "#8B5CF6";
+                                          color = "#A855F7";
                                         } else if (emotionName.includes("surprise")) {
-                                          color = "#F59E0B";
-                                        } else if (emotionName.includes("disgust")) {
                                           color = "#F97316";
+                                        } else if (emotionName.includes("disgust")) {
+                                          color = "#10B981";
                                         } else {
                                           color = "#64748B";
                                         }
@@ -745,7 +747,7 @@ export default function DocumentDetailPage() {
                               const getSentimentColors = (emotionName: string) => {
                                 const normalized = emotionName.toLowerCase();
                                 if (normalized.includes("positive") || normalized.includes("joy") || normalized.includes("happy")) {
-                                  return { bar: "bg-emerald-400", bg: "bg-emerald-400/20" };
+                                  return { bar: "bg-yellow-400", bg: "bg-yellow-400/20" };
                                 }
                                 if (normalized.includes("anger")) {
                                   return { bar: "bg-rose-400", bg: "bg-rose-400/20" };
@@ -757,13 +759,13 @@ export default function DocumentDetailPage() {
                                   return { bar: "bg-zinc-400", bg: "bg-zinc-400/20" };
                                 }
                                 if (normalized.includes("fear")) {
-                                  return { bar: "bg-violet-400", bg: "bg-violet-400/20" };
+                                  return { bar: "bg-purple-400", bg: "bg-purple-400/20" };
                                 }
                                 if (normalized.includes("surprise")) {
-                                  return { bar: "bg-amber-400", bg: "bg-amber-400/20" };
+                                  return { bar: "bg-orange-400", bg: "bg-orange-400/20" };
                                 }
                                 if (normalized.includes("disgust")) {
-                                  return { bar: "bg-orange-400", bg: "bg-orange-400/20" };
+                                  return { bar: "bg-emerald-400", bg: "bg-emerald-400/20" };
                                 }
                                 // Default to slate for unknown emotions
                                 return { bar: "bg-slate-400", bg: "bg-slate-400/20" };
