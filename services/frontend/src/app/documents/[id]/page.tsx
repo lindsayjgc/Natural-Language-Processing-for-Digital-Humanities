@@ -543,8 +543,8 @@ export default function DocumentDetailPage() {
                         .sort((a, b) => b.value - a.value);
 
                       return (
-                        <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-                          <div className="w-full md:w-80 h-80">
+                        <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-54">
+                          <div className="w-80 h-80 flex justify-center items-center">
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
                                 <Tooltip
@@ -616,7 +616,7 @@ export default function DocumentDetailPage() {
                               </PieChart>
                             </ResponsiveContainer>
                           </div>
-                          <div className="flex-1">
+                          <div className="flex flex-col gap-3">
                             <div className="flex flex-col gap-3">
                               {pieData.map((item) => (
                                 <div
