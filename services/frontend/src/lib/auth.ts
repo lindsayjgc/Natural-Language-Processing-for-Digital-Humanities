@@ -7,11 +7,13 @@ export interface User {
 export interface LoginCredentials {
   email: string;
   password: string;
+  remember_me?: boolean;
 }
 
 export interface RegisterData {
   email: string;
   password: string;
+  remember_me?: boolean;
 }
 
 export interface AuthResponse {
@@ -21,21 +23,21 @@ export interface AuthResponse {
 
 // Token management
 export const setAuthToken = (token: string) => {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('auth_token', token);
+  if (typeof window !== "undefined") {
+    localStorage.setItem("auth_token", token);
   }
 };
 
 export const getAuthToken = (): string | null => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('auth_token');
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("auth_token");
   }
   return null;
 };
 
 export const removeAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('auth_token');
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("auth_token");
   }
 };
 
@@ -45,16 +47,16 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export const authApi = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(credentials),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Login failed');
+      throw new Error(error.detail || "Login failed");
     }
 
     return response.json();
@@ -62,16 +64,16 @@ export const authApi = {
 
   async register(userData: RegisterData): Promise<User> {
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(userData),
     });
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.detail || 'Registration failed');
+      throw new Error(error.detail || "Registration failed");
     }
 
     return response.json();
@@ -80,21 +82,21 @@ export const authApi = {
   async getCurrentUser(): Promise<User> {
     const token = getAuthToken();
     if (!token) {
-      throw new Error('No authentication token');
+      throw new Error("No authentication token");
     }
 
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
 
     if (!response.ok) {
       if (response.status === 401) {
         removeAuthToken();
-        throw new Error('Authentication expired');
+        throw new Error("Authentication expired");
       }
-      throw new Error('Failed to get user info');
+      throw new Error("Failed to get user info");
     }
 
     return response.json();

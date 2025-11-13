@@ -224,8 +224,8 @@ main() {
     source venv311/bin/activate
     pip install --upgrade pip
 
-    print_info "Installing Python packages from requirements.txt..."
-    pip install -r requirements.txt
+    print_info "Installing/upgrading Python packages from requirements.txt..."
+    pip install -r requirements.txt --upgrade
 
     print_success "Python dependencies installed"
 

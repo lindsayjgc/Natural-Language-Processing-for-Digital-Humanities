@@ -1,7 +1,16 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, LoginCredentials, RegisterData, authApi, getAuthToken, setAuthToken, removeAuthToken } from '@/lib/auth';
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  authApi,
+  getAuthToken,
+  type LoginCredentials,
+  type RegisterData,
+  removeAuthToken,
+  setAuthToken,
+  type User,
+} from "@/lib/auth";
 
 interface AuthContextType {
   user: User | null;
@@ -35,7 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await authApi.register(userData);
       // After successful registration, log the user in
-      await login({ email: userData.email, password: userData.password });
+      await login({
+        email: userData.email,
+        password: userData.password,
+        remember_me: userData.remember_me,
+      });
     } catch (error) {
       throw error;
     }
@@ -57,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await authApi.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error('Failed to refresh user:', error);
+      console.error("Failed to refresh user:", error);
       setUser(null);
     }
   };
@@ -70,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           await refreshUser();
         } catch (error) {
-          console.error('Failed to initialize auth:', error);
+          console.error("Failed to initialize auth:", error);
           removeAuthToken();
         }
       }
@@ -96,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

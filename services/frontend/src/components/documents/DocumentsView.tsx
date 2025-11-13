@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DocumentsTable } from "@/components/documents/DocumentsTable";
 import { FiltersBar } from "@/components/documents/FiltersBar";
 import { UploadCard } from "@/components/documents/UploadCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { apiClient, type Document } from "@/lib/api";
 
 export function DocumentsView() {
@@ -15,9 +16,12 @@ export function DocumentsView() {
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
 
   // Mock user ID for now - in a real app this would come from auth
-  const userId = "demo_user";
+  // const userId = "demo_user";
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const fetchDocuments = useCallback(async () => {
+    if (!userId) return; // prevent calling with undefined
     try {
       setLoading(true);
       setError(null);
@@ -30,15 +34,16 @@ export function DocumentsView() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   // Fetch documents on component mount
   useEffect(() => {
+    if (!userId) return;
     fetchDocuments();
-  }, [fetchDocuments]);
+  }, [fetchDocuments, userId]);
 
   const handleFileUpload = async (files: File[]) => {
-    if (files.length === 0) return;
+    if (files.length === 0 || !userId) return;
 
     setUploading(true);
     setError(null);
@@ -71,6 +76,7 @@ export function DocumentsView() {
     documentId: string,
     maxAttempts = 30,
   ) => {
+    if (!userId) throw new Error("User ID is required to poll documents");
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         setProcessingStatus(

@@ -17,7 +17,7 @@ export function UploadCard({
   uploading = false,
 }: UploadCardProps) {
   const handleDrop = useCallback(
-    (event: React.DragEvent<HTMLButtonElement>) => {
+    (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       const dropped = Array.from(event.dataTransfer.files ?? []);
       if (dropped.length && onDropFiles) onDropFiles(dropped);
@@ -39,8 +39,7 @@ export function UploadCard({
   return (
     <Card>
       <CardContent className="p-5">
-        <button
-          type="button"
+        <div
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
           className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-violet-400 transition-colors cursor-pointer w-full"
@@ -69,7 +68,7 @@ export function UploadCard({
             className="sr-only"
             onChange={handleInputChange}
           />
-        </button>
+        </div>
       </CardContent>
     </Card>
   );

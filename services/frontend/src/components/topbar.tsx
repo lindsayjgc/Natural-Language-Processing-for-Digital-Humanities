@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
+import { AuthDialog } from "@/components/auth/AuthDialog";
+import { UserMenu } from "@/components/auth/UserMenu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { UserMenu } from "@/components/auth/UserMenu";
-import { AuthDialog } from "@/components/auth/AuthDialog";
-import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function TopBar() {
   const { isAuthenticated, isLoading } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
-  const handleAuthClick = (mode: 'login' | 'register') => {
+  const handleAuthClick = (mode: "login" | "register") => {
     setAuthMode(mode);
     setAuthDialogOpen(true);
   };
@@ -25,11 +25,6 @@ export function TopBar() {
           <Link href="/" className="flex items-center gap-2">
             <span className="text-gray-900 font-semibold">LitLens</span>
           </Link>
-          <Separator
-            decorative
-            orientation="vertical"
-            className="h-6 bg-black/10"
-          />
           {isAuthenticated && (
             <nav className="hidden md:flex items-center gap-1 text-sm">
               <Link
@@ -56,13 +51,14 @@ export function TopBar() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleAuthClick('login')}
+                  onClick={() => handleAuthClick("login")}
                 >
                   Sign In
                 </Button>
                 <Button
                   size="sm"
-                  onClick={() => handleAuthClick('register')}
+                  onClick={() => handleAuthClick("register")}
+                  className="bg-violet-600 hover:bg-violet-700 text-white"
                 >
                   Sign Up
                 </Button>

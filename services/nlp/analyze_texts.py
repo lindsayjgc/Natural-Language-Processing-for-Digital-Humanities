@@ -2,7 +2,9 @@
 # Unlike analyze_texts.py, this one can handle both ETL-cleaned texts and raw files
 # (PDF, DOCX, RTF, etc.) by using ETL readers/normalizers if --from-raw is specified.
 
-import argparse, json, hashlib
+import argparse
+import json
+import hashlib
 from pathlib import Path
 import pandas as pd
 
@@ -57,9 +59,12 @@ def _hash_stem(path: Path) -> str:
 
 
 # ---- core analysis pipeline ----
-def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sent_threshold, max_sentences):
+def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sent_threshold, max_sentences, write_csv=True):
     """
-    Run NLP analysis on raw text and write CSV/JSON outputs.
+    Run NLP analysis on raw text and optionally write CSV/JSON outputs.
+    
+    Args:
+        write_csv: If True, write CSV files to outdir (useful for CLI). If False, skip CSV generation (faster for API usage).
     """
     prep = process_text(text)
     ngram_counts = count_ngrams(prep["lemmas"], ngram_ns)
@@ -67,20 +72,21 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
 
     doc_sent, sent_df, sent_method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
 
-    outdir.mkdir(parents=True, exist_ok=True)
+    if write_csv:
+        outdir.mkdir(parents=True, exist_ok=True)
 
-    # Word frequencies
-    wf = pd.DataFrame(prep["freq_lemmas"].most_common(topn), columns=["lemma","count"])
-    wf.to_csv(outdir / f"{tag}_wordfreq_top{topn}.csv", index=False)
+        # Word frequencies
+        wf = pd.DataFrame(prep["freq_lemmas"].most_common(topn), columns=["lemma","count"])
+        wf.to_csv(outdir / f"{tag}_wordfreq_top{topn}.csv", index=False)
 
-    # N-grams
-    for name, counter in ngram_counts.items():
-        top = pd.DataFrame(counter.most_common(topn), columns=[name,"count"])
-        top.to_csv(outdir / f"{tag}_{name}_top{topn}.csv", index=False)
+        # N-grams
+        for name, counter in ngram_counts.items():
+            top = pd.DataFrame(counter.most_common(topn), columns=[name,"count"])
+            top.to_csv(outdir / f"{tag}_{name}_top{topn}.csv", index=False)
 
-    # POS
-    pos_df = pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS","count"])
-    pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
+        # POS
+        pos_df = pd.DataFrame(sorted(pos_counts.items(), key=lambda x: (-x[1], x[0])), columns=["POS","count"])
+        pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
 
     # Entities (all, people, and places)
     if prep.get("entities"):
@@ -112,19 +118,24 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
         "sentence_count": len(prep.get("sentences", [])),
         "char_count": len(text),
         "type_token_ratio": prep["type_token_ratio"],
+        "word_frequencies": word_frequencies,
+        "ngrams": ngrams_data,
+        "pos_counts": pos_counts_dict,
+        "sentence_sentiment": sentence_sentiment,
     }
-    (outdir / f"{tag}_summary.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    if write_csv:
+        (outdir / f"{tag}_summary.json").write_text(json.dumps(analysis_results, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    # Sentence-level sentiment
-    sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
+        # Sentence-level sentiment
+        sent_df.to_csv(outdir / f"{tag}_emotional_sentences.csv", index=False)
 
-    # Vertical doc-level emotion scores
-    lines = ["emotion,score"]
-    for emo, score in sorted(doc_sent.items(), key=lambda kv: -kv[1]):
-        lines.append(f"{emo},{score:.12f}")
-    (outdir / f"{tag}_doc_emotion_vertical.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
+        # Vertical doc-level emotion scores
+        lines = ["emotion,score"]
+        for emo, score in sorted(doc_sent.items(), key=lambda kv: -kv[1]):
+            lines.append(f"{emo},{score:.12f}")
+        (outdir / f"{tag}_doc_emotion_vertical.csv").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-    return meta
+    return analysis_results
 
 
 def process_path(ipath: Path,
@@ -134,9 +145,13 @@ def process_path(ipath: Path,
                  ngram_ns=(1, 2, 3), 
                  topn=50, 
                  sent_threshold=0.5, 
-                 max_sentences=0):
+                 max_sentences=0,
+                 write_csv=True):
     """
     Process a single file path (either cleaned text or raw document).
+    
+    Args:
+        write_csv: If True, write CSV files to outdir (useful for CLI). If False, skip CSV generation (faster for API usage).
     """
     tag = _hash_stem(ipath)
     if from_raw:
@@ -150,13 +165,14 @@ def process_path(ipath: Path,
         # Already ETL-cleaned .txt
         text = _read_clean_txt(ipath)
 
-    meta = _analyze_text_blob(
+    analysis_results = _analyze_text_blob(
         text, tag, outdir,
         ngram_ns=ngram_ns, topn=topn,
-        sent_threshold=sent_threshold, max_sentences=max_sentences
+        sent_threshold=sent_threshold, max_sentences=max_sentences,
+        write_csv=write_csv
     )
-    meta["file"] = str(ipath)
-    return meta
+    analysis_results["file"] = str(ipath)
+    return analysis_results
 
 
 def main():
@@ -190,7 +206,7 @@ def main():
 
     # Run processing on each file
     for p in paths:
-        meta = process_path(
+        analysis_results = process_path(
             p, outdir,
             from_raw=args.from_raw,
             ngram_ns=ngram_ns,
@@ -198,7 +214,7 @@ def main():
             sent_threshold=args.sent_threshold,
             max_sentences=args.max_sentences
         )
-        print(json.dumps(meta, indent=2))
+        print(json.dumps(analysis_results, indent=2))
 
 
 if __name__ == "__main__":

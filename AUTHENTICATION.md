@@ -210,7 +210,7 @@ def test_protected_route():
         "password": "testpassword"
     })
     token = login_response.json()["access_token"]
-    
+
     # Use token for protected request
     headers = {"Authorization": f"Bearer {token}"}
     response = client.get("/documents", headers=headers)
@@ -232,7 +232,7 @@ test('shows login form when not authenticated', () => {
       </ProtectedRoute>
     </AuthProvider>
   );
-  
+
   expect(screen.getByText('Authentication Required')).toBeInTheDocument();
 });
 ```
@@ -244,6 +244,7 @@ test('shows login form when not authenticated', () => {
 1. **Token Expiration**: Users will be automatically logged out when tokens expire
 2. **CORS Errors**: Make sure CORS is configured to allow frontend domain
 3. **Secret Key**: Make sure SECRET_KEY is set and consistent across deployments
+4. **Bcrypt Version**: Must use bcrypt < 4.0.0 for passlib compatibility (see requirements.txt)
 
 ### Debug Tips
 

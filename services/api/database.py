@@ -38,8 +38,10 @@ def get_documents():
 def get_document_stats():
     return get_db().document_stats
 
+
 def get_users():
     return get_db().users
+
 
 async def get_user_documents(user_id: str) -> List[Dict]:
     """Get all documents for a user"""
@@ -111,16 +113,24 @@ async def get_document(document_id: str, user_id: str) -> Optional[Dict]:
         stats = await get_document_stats().find_one({"_id": ObjectId(item["stats_id"])})
         if stats:
             stats["_id"] = str(stats["_id"])
-            # Convert any other ObjectIds in stats to strings
-            for key, value in stats.items():
-                if (
-                    hasattr(value, "__class__")
-                    and value.__class__.__name__ == "ObjectId"
-                ):
-                    stats[key] = str(value)
+            # Recursively convert any ObjectIds in stats to strings
+            stats = _convert_objectids_recursive(stats)
             item["stats"] = stats
 
     return item
+
+
+def _convert_objectids_recursive(obj):
+    """Recursively convert ObjectIds to strings in nested structures"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: _convert_objectids_recursive(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [_convert_objectids_recursive(item) for item in obj]
+    else:
+        return obj
+
 
 # User management
 async def create_user(email: str, hashed_password: str) -> str:
@@ -150,10 +160,11 @@ async def get_user_by_id(user_id: str) -> Optional[Dict]:
     user = await get_users().find_one({"_id": ObjectId(user_id)})
     if user:
         user["_id"] = str(user["_id"])
-        # Convert datetime to string 
+        # Convert datetime to string
         if "created_at" in user and user["created_at"]:
             user["created_at"] = user["created_at"].isoformat()
     return user
+
 
 async def test_connection():
     """Test MongoDB connection"""

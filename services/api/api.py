@@ -1,10 +1,10 @@
 # FastAPI backend API
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pathlib import Path
 import tempfile
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 # Import NLP processing
 try:
@@ -42,6 +42,39 @@ from services.api.auth import (
 )
 
 
+def convert_to_native_types(obj):
+    """
+    Recursively convert numpy types, MongoDB ObjectIds, datetime objects, and other non-JSON-serializable types to native Python types.
+    """
+    from bson import ObjectId
+    
+    # Handle MongoDB ObjectId first (must be before dict/list checks)
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    
+    # Handle datetime objects
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    
+    # Handle numpy types
+    try:
+        import numpy as np
+        if isinstance(obj, (np.integer, np.floating)):
+            return float(obj) if isinstance(obj, np.floating) else int(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+    except ImportError:
+        pass
+    
+    # Recursively handle collections
+    if isinstance(obj, dict):
+        return {key: convert_to_native_types(value) for key, value in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [convert_to_native_types(item) for item in obj]
+    else:
+        return obj
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Test database connection on startup"""
@@ -70,6 +103,8 @@ async def get_documents(user_id: str):
     """Get all documents for a user"""
     try:
         documents = await get_user_documents(user_id)
+        # Convert any remaining ObjectIds to strings recursively
+        documents = convert_to_native_types(documents)
         return {"user_id": user_id, "documents": documents}
     except Exception as e:
         raise HTTPException(
@@ -85,8 +120,7 @@ async def upload_document_options():
 
 @app.post("/documents/upload")
 async def upload_document(
-    file: UploadFile = File(...), 
-    user_id: str = Depends(get_current_user)
+    file: UploadFile = File(...), user_id: str = Depends(get_current_user)
 ):
     """Upload and process a document"""
     if not file.filename:
@@ -108,11 +142,29 @@ async def upload_document(
         temp_outdir = temp_path.parent / "nlp_outputs"
         temp_outdir.mkdir(exist_ok=True)
 
-        # Process the document
-        meta = process_path(ipath=Path(temp_path), outdir=temp_outdir, from_raw=True)
+        # Process the document (skip CSV generation for API - we store everything in MongoDB)
+        analysis_results = process_path(ipath=Path(temp_path), outdir=temp_outdir, from_raw=True, write_csv=False)
+
+        # Convert numpy types and ensure analysis results are JSON serializable before saving to database
+        import json
+        serialized_stats = convert_to_native_types(analysis_results)
+        
+        # Verify JSON serialization
+        try:
+            json.dumps(serialized_stats)
+        except (TypeError, ValueError):
+            # If serialization still fails, convert problematic objects to strings
+            fallback_stats = {}
+            for key, value in serialized_stats.items():
+                try:
+                    json.dumps(value)
+                    fallback_stats[key] = value
+                except (TypeError, ValueError):
+                    fallback_stats[key] = str(value)
+            serialized_stats = fallback_stats
 
         # Save stats to database
-        stats_id = await save_document_stats(meta)
+        stats_id = await save_document_stats(serialized_stats)
 
         # Update document with stats
         await update_document(document_id, stats_id, "completed")
@@ -120,29 +172,17 @@ async def upload_document(
         # Clean up temp file
         temp_path.unlink()
 
-        # Ensure meta is JSON serializable
-        try:
-            # Try to serialize meta to ensure it's valid JSON
-            import json
-
-            json.dumps(meta)
-            serialized_meta = meta
-        except (TypeError, ValueError) as e:
-            # If serialization fails, convert problematic objects to strings
-            serialized_meta = {}
-            for key, value in meta.items():
-                try:
-                    json.dumps(value)
-                    serialized_meta[key] = value
-                except (TypeError, ValueError):
-                    serialized_meta[key] = str(value)
-
-        return {
+        # Ensure the entire response is JSON serializable (convert any remaining ObjectIds)
+        response_data = {
             "document_id": document_id,
             "filename": file.filename,
             "processing_status": "completed",
-            "stats": serialized_meta,
+            "stats": serialized_stats,
         }
+        # Double-check everything is serializable
+        response_data = convert_to_native_types(response_data)
+
+        return response_data
 
     except Exception as e:
         # Update document with error status
@@ -168,9 +208,8 @@ async def get_document_by_id(user_id: str, document_id: str):
         if not document:
             raise HTTPException(status_code=404, detail="Document not found")
 
-        # Convert datetime to string for JSON serialization
-        if "uploaded_at" in document and document["uploaded_at"]:
-            document["uploaded_at"] = document["uploaded_at"].isoformat()
+        # Convert any remaining ObjectIds, datetime objects, and non-serializable types to native types recursively
+        document = convert_to_native_types(document)
 
         return document
     except HTTPException:
@@ -178,26 +217,25 @@ async def get_document_by_id(user_id: str, document_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get document: {str(e)}")
 
+
 # Authentication endpoints
 @app.post("/auth/register", response_model=User)
 async def register(user: UserCreate):
     """Register a new user"""
     existing_user = await get_user_by_email(user.email)
     if existing_user:
-        raise HTTPException(
-            status_code=400, detail="Email already registered"
-        )
-    
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     # Create new user
     hashed_password = get_password_hash(user.password)
     user_id = await create_user(user.email, hashed_password)
-    
+
     created_user = await get_user_by_id(user_id)
     # Return user info (without password)
     return User(
         id=user_id,
         email=user.email,
-        created_at=created_user["created_at"], 
+        created_at=created_user["created_at"],
     )
 
 
@@ -206,19 +244,27 @@ async def login(user_credentials: UserLogin):
     """Login user and return access token"""
     # Get user from database
     user = await get_user_by_email(user_credentials.email)
-    if not user or not verify_password(user_credentials.password, user["hashed_password"]):
+    if not user or not verify_password(
+        user_credentials.password, user["hashed_password"]
+    ):
         raise HTTPException(
             status_code=401,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+    # Create access token with different expiration based on remember_me
+    if user_credentials.remember_me:
+        # Extended token for 30 days when remember me is checked
+        access_token_expires = timedelta(days=30)
+    else:
+        # Standard token expiration
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
     access_token = create_access_token(
         data={"sub": user["_id"]}, expires_delta=access_token_expires
     )
-    
+
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -228,10 +274,14 @@ async def get_current_user_info(current_user_id: str = Depends(get_current_user)
     user = await get_user_by_id(current_user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
+    # Parse the ISO string back to datetime if necessary
+    created_at = user["created_at"]
+    if isinstance(created_at, str):
+        created_at = datetime.fromisoformat(created_at)
+
     return User(
         id=user["_id"],
         email=user["email"],
+        created_at=created_at,
     )
-
-

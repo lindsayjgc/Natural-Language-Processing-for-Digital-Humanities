@@ -1,5 +1,6 @@
 // API client for NLP Document Library backend
-import { getAuthToken } from './auth';
+import { getAuthToken } from "./auth";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export interface Document {
@@ -11,16 +12,37 @@ export interface Document {
   stats?: DocumentStats;
 }
 
+export interface WordFrequency {
+  lemma: string;
+  count: number;
+}
+
+export interface NgramFrequency {
+  ngram: string;
+  count: number;
+}
+
+export interface SentenceSentiment {
+  sentence: string;
+  emotion: string;
+  score: number;
+}
+
 export interface DocumentStats {
   vocab_size: number;
   token_count: number;
   type_token_ratio: number;
-  doc_sentiment: {
-    emotions: Record<string, number>;
-    dominant_emotion: string;
-    confidence: number;
-  };
+  doc_sentiment: Record<string, number>;
   sentiment_method: string;
+  word_frequencies?: WordFrequency[];
+  ngrams?: {
+    unigram?: NgramFrequency[];
+    bigram?: NgramFrequency[];
+    trigram?: NgramFrequency[];
+  };
+  pos_counts?: Record<string, number>;
+  sentence_sentiment?: SentenceSentiment[];
+  file?: string;
 }
 
 export interface UserDocuments {
