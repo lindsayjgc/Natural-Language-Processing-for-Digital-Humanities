@@ -48,7 +48,7 @@ export function StatisticsView() {
 
       // Fetch full document details with stats for each completed document
       // Note: getUserDocuments may not include full stats, so we fetch each document
-      const documentsWithStats: Array<{ stats: Document["stats"] }> = [];
+      const documentsWithStats: Array<{ stats: NonNullable<Document["stats"]> }> = [];
       
       // Fetch documents in parallel (batch of 10 at a time to avoid overwhelming the API)
       const batchSize = 10;
@@ -63,7 +63,7 @@ export function StatisticsView() {
         const batchResults = await Promise.all(batchPromises);
         
         for (const doc of batchResults) {
-          if (doc && doc.stats) {
+          if (doc?.stats) {
             documentsWithStats.push({ stats: doc.stats });
           }
         }
