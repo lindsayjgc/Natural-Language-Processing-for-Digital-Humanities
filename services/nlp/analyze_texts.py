@@ -90,7 +90,7 @@ def _analyze_text_blob(
 
     # --- derived stats for JSON / return value ---
     vocab_size = prep["vocab_size"]
-    token_count = prep["token_count"]          # <- matches frontend
+    token_count = prep["token_count"]          # matches frontend
     type_token_ratio = prep["type_token_ratio"]
 
     # Top word frequencies as list[{"lemma", "count"}]
@@ -120,7 +120,7 @@ def _analyze_text_blob(
         "sentiment_method": sent_method,
         "doc_sentiment": doc_sent,                # dict emotion -> score
         "vocab_size": vocab_size,
-        "token_count": token_count,               # <- key matches TS
+        "token_count": token_count,
         "type_token_ratio": type_token_ratio,
         "word_frequencies": word_frequencies,     # list[{lemma,count}]
         "ngrams": ngrams_data,                    # name -> list[{ngram,count}]
@@ -148,6 +148,46 @@ def _analyze_text_blob(
         )
         pos_df.to_csv(outdir / f"{tag}_pos_counts.csv", index=False)
 
+        # --- Entities (all, people, and places) CSVs only ---
+        entities = prep.get("entities") or []
+        people = prep.get("people") or []
+        places = prep.get("places") or []
+
+        if entities:
+            # entities: (text, label, start_token, end_token)
+            ent_df = pd.DataFrame(
+                entities,
+                columns=["Entity", "Label", "StartToken", "EndToken"],
+            )
+            ent_df.to_csv(outdir / f"{tag}_entities.csv", index=False)
+
+            if not ent_df.empty:
+                entity_counts = (
+                    ent_df.groupby(["Entity", "Label"])
+                    .size()
+                    .reset_index(name="Count")
+                    .sort_values(["Label", "Count"], ascending=[True, False])
+                )
+                entity_counts.to_csv(
+                    outdir / f"{tag}_entity_frequencies.csv",
+                    index=False,
+                )
+
+        if people:
+            # people: (text, start_token, end_token)
+            ppl_df = pd.DataFrame(
+                people,
+                columns=["Person", "StartToken", "EndToken"],
+            )
+            ppl_df.to_csv(outdir / f"{tag}_people.csv", index=False)
+
+        if places:
+            # places: (text, start_token, end_token)
+            plc_df = pd.DataFrame(
+                places,
+                columns=["Location", "StartToken", "EndToken"],
+            )
+            plc_df.to_csv(outdir / f"{tag}_locations.csv", index=False)
 
         # Sentence-level sentiment CSV
         if not sent_df.empty:
@@ -169,6 +209,7 @@ def _analyze_text_blob(
         )
 
     return analysis_results
+
 
 def process_path(ipath: Path,
                  outdir: Path,
