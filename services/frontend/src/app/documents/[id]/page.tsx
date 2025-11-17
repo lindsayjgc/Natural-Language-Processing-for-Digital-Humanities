@@ -24,6 +24,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -861,7 +868,7 @@ export default function DocumentDetailPage() {
                           .map((item, index) => {
                             const percentage = item.score * 100;
                             const emotionKey = item.emotion.toLowerCase().replace(/_/g, " ");
-
+                        
                               // Color coding for different sentiment types - modern, muted palette
                               const getSentimentColors = (emotionName: string) => {
                                 const normalized = emotionName.toLowerCase();
@@ -889,7 +896,6 @@ export default function DocumentDetailPage() {
                                 // Default to slate for unknown emotions
                                 return { bar: "bg-slate-400", bg: "bg-slate-400/20" };
                               };
-                            };
 
                             const colors = getSentimentColors(item.emotion);
                             // Use sentence text + index as key since sentences might repeat
