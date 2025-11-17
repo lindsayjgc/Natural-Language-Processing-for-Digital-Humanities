@@ -649,7 +649,7 @@ export default function DocumentDetailPage() {
                         </div>
                       </CardHeader>
                       <CardContent className="p-4">
-                      <div className="divide-y divide-border">
+                        <div className="divide-y divide-border">
                         {stats.sentence_sentiment
                           .map((item, index) => {
                             const percentage = item.score * 100;

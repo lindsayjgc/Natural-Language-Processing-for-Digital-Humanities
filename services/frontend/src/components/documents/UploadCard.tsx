@@ -20,19 +20,21 @@ export function UploadCard({
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       const dropped = Array.from(event.dataTransfer.files ?? []);
-      // Filter out unsupported file types (only allow .txt files)
-      const txtFiles = dropped.filter(file => {
+      // Filter to supported file types (.txt, .docx, .doc, .pdf, .rtf)
+      // Backend handles conversion of PDF and DOC files
+      const supportedFiles = dropped.filter(file => {
         const fileName = file.name.toLowerCase();
-        return fileName.endsWith('.txt') || fileName.endsWith('.text');
+        return fileName.endsWith('.txt') || fileName.endsWith('.text') ||
+               fileName.endsWith('.docx') || fileName.endsWith('.doc') ||
+               fileName.endsWith('.pdf') || fileName.endsWith('.rtf');
       });
       
-      if (txtFiles.length && onDropFiles) {
-        onDropFiles(txtFiles);
-      } else if (dropped.length > txtFiles.length) {
-        // Some files were filtered out - could show a warning here if needed
-        if (txtFiles.length > 0 && onDropFiles) {
-          onDropFiles(txtFiles);
-        }
+      if (supportedFiles.length && onDropFiles) {
+        onDropFiles(supportedFiles);
+      }
+      // Optionally show a warning if files were filtered
+      if (dropped.length > supportedFiles.length) {
+        console.warn(`${dropped.length - supportedFiles.length} unsupported files were filtered out`);
       }
     },
     [onDropFiles],
@@ -44,12 +46,15 @@ export function UploadCard({
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    // Filter to only .txt files (though accept attribute should handle this)
-    const txtFiles = files.filter(file => {
+    // Filter to supported file types (.txt, .docx, .doc, .pdf, .rtf)
+    // Backend handles conversion of PDF and DOC files
+    const supportedFiles = files.filter(file => {
       const fileName = file.name.toLowerCase();
-      return fileName.endsWith('.txt') || fileName.endsWith('.text');
+      return fileName.endsWith('.txt') || fileName.endsWith('.text') ||
+             fileName.endsWith('.docx') || fileName.endsWith('.doc') ||
+             fileName.endsWith('.pdf') || fileName.endsWith('.rtf');
     });
-    if (txtFiles.length && onDropFiles) onDropFiles(txtFiles);
+    if (supportedFiles.length && onDropFiles) onDropFiles(supportedFiles);
     // reset so the same file can be selected again
     e.currentTarget.value = "";
   };
@@ -72,7 +77,7 @@ export function UploadCard({
             or click to browse your computer
             <br />
             <span className="text-sm text-gray-500 mt-2 block">
-              Supported formats: .txt files only
+              Supported formats: .txt, .docx, .doc, .pdf, .rtf
             </span>
           </div>
           <Button
@@ -87,7 +92,7 @@ export function UploadCard({
             ref={inputRef}
             type="file"
             multiple
-            accept=".txt,.text"
+            accept=".txt,.text,.docx,.doc,.pdf,.rtf"
             className="sr-only"
             onChange={handleInputChange}
           />

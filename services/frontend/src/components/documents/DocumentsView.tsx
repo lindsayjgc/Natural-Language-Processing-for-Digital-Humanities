@@ -52,15 +52,6 @@ export function DocumentsView() {
     try {
       // Upload each file and wait for processing to complete
       for (const file of files) {
-        // Check file type and provide helpful error before upload
-        const fileName = file.name.toLowerCase();
-        if (fileName.endsWith('.pdf')) {
-          throw new Error(
-            'PDF files are not directly supported. Please convert your PDF to a .txt file before uploading. ' +
-            'You can use online converters or copy the text content into a .txt file.'
-          );
-        }
-
         const uploadResponse = await apiClient.uploadDocument(userId, file);
 
         // Poll for document completion if it's still processing
@@ -73,16 +64,7 @@ export function DocumentsView() {
       await fetchDocuments();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to upload documents";
-      
-      // Provide user-friendly messages for common errors
-      if (errorMessage.includes('PDF') || errorMessage.includes('textract')) {
-        setError(
-          'PDF files are not directly supported. Please convert your PDF to a .txt file before uploading. ' +
-          'You can use online converters or copy the text content into a .txt file.'
-        );
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
     } finally {
       setUploading(false);
       setProcessingStatus(null);
