@@ -258,74 +258,6 @@ export default function DocumentDetailPage() {
 
               {/* Words & Grammar Tab */}
               <TabsContent value="words" className="space-y-6">
-                {/* Grammar Section */}
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2">
-                    <Tag className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold">Grammar</h2>
-                  </div>
-
-                  {/* POS Counts */}
-                  {stats.pos_counts &&
-                    Object.keys(stats.pos_counts).length > 0 && (
-                      <Card>
-                        <CardHeader className="p-6 pb-4">
-                          <CardTitle>Part-of-Speech Tags</CardTitle>
-                          <CardDescription>
-                            Distribution of grammatical categories
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                            {Object.entries(stats.pos_counts)
-                              .sort(([, a], [, b]) => b - a)
-                              .map(([pos, count]) => {
-                                const posDescriptions: Record<string, string> =
-                                  {
-                                    NOUN: "Noun",
-                                    VERB: "Verb",
-                                    ADP: "Adposition",
-                                    DET: "Determiner",
-                                    PRON: "Pronoun",
-                                    ADJ: "Adjective",
-                                    ADV: "Adverb",
-                                    CCONJ: "Coordinating Conjunction",
-                                    PART: "Particle",
-                                    NUM: "Numeral",
-                                    X: "Other",
-                                    ".": "Punctuation",
-                                    PROPN: "Proper Noun",
-                                    AUX: "Auxiliary Verb",
-                                    SCONJ: "Subordinating Conjunction",
-                                    INTJ: "Interjection",
-                                    PUNCT: "Punctuation",
-                                    SYM: "Symbol",
-                                  };
-                                const description = posDescriptions[pos] || pos;
-                                return (
-                                  <div
-                                    key={pos}
-                                    className="flex flex-col gap-1 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-medium text-sm">
-                                        {description}
-                                      </span>
-                                      <Badge
-                                        variant="secondary"
-                                        className="shrink-0"
-                                      >
-                                        {count.toLocaleString()}
-                                      </Badge>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-                </div>
 
                 {/* Words Section */}
                 <div className="space-y-6">
@@ -435,23 +367,60 @@ export default function DocumentDetailPage() {
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="p-6">
-                              <div className="space-y-2">
-                                {stats.ngrams.unigram.map((item, index) => (
-                                  <div
-                                    key={`unigram-${index}`}
-                                    className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
+                              <div className="h-40 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart
+                                    data={stats.ngrams.unigram
+                                      .slice(0, 10)
+                                      .map((item: any) => ({
+                                        name: item.ngram,
+                                        value: item.count,
+                                      }))}
+                                    margin={{ top: 5, right: 5, left: 0, bottom: 20 }}
                                   >
-                                    <span className="truncate flex-1">
-                                      {item.ngram}
-                                    </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-2 shrink-0"
-                                    >
-                                      {item.count}
-                                    </Badge>
-                                  </div>
-                                ))}
+                                    <XAxis
+                                      dataKey="name"
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                      interval={0}
+                                      angle={-30}
+                                      textAnchor="end"
+                                    />
+                                    <YAxis
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                    />
+                                    <Tooltip
+                                      cursor={{ fill: "#8b5cf633" }}
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length > 0) {
+                                          const data = payload[0].payload; // access the original payload
+                                          const lemma = data.name || "Unknown";
+                                          const count = typeof data.value === "number" ? data.value : 0;
+                                          return (
+                                            <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
+                                              <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="font-semibold text-sm">{lemma}</span>
+                                              </div>
+                                              <div className="text-sm text-muted-foreground tabular-nums">
+                                                {count}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                    <Bar
+                                      dataKey="value"
+                                      fill="#8b5cf6"
+                                      radius={[3, 3, 0, 0]}
+                                      barSize={Math.max(8, 100 - 10 / 2)}
+                                    />
+                                  </BarChart>
+                                </ResponsiveContainer>
                               </div>
                             </CardContent>
                           </Card>
@@ -469,23 +438,60 @@ export default function DocumentDetailPage() {
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="p-6">
-                              <div className="space-y-2">
-                                {stats.ngrams.bigram.map((item, index) => (
-                                  <div
-                                    key={`bigram-${index}`}
-                                    className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
+                              <div className="h-40 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart
+                                    data={stats.ngrams.bigram
+                                      .slice(0, 10)
+                                      .map((item: any) => ({
+                                        name: item.ngram.replace(/_/g, " "),
+                                        value: item.count,
+                                      }))}
+                                    margin={{ top: 5, right: 5, left: 0, bottom: 20 }}
                                   >
-                                    <span className="truncate flex-1">
-                                      {item.ngram.replace(/_/g, " ")}
-                                    </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-2 shrink-0"
-                                    >
-                                      {item.count}
-                                    </Badge>
-                                  </div>
-                                ))}
+                                    <XAxis
+                                      dataKey="name"
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                      interval={0}
+                                      angle={-30}
+                                      textAnchor="end"
+                                    />
+                                    <YAxis
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                    />
+                                    <Tooltip
+                                      cursor={{ fill: "#8b5cf633" }}
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length > 0) {
+                                          const data = payload[0].payload; // access the original payload
+                                          const lemma = data.name || "Unknown";
+                                          const count = typeof data.value === "number" ? data.value : 0;
+                                          return (
+                                            <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
+                                              <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="font-semibold text-sm">{lemma}</span>
+                                              </div>
+                                              <div className="text-sm text-muted-foreground tabular-nums">
+                                                {count}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                    <Bar
+                                      dataKey="value"
+                                      fill="#8b5cf6"
+                                      radius={[3, 3, 0, 0]}
+                                      barSize={Math.max(8, 100 - 10 / 2)}
+                                    />
+                                  </BarChart>
+                                </ResponsiveContainer>
                               </div>
                             </CardContent>
                           </Card>
@@ -503,29 +509,135 @@ export default function DocumentDetailPage() {
                               </CardDescription>
                             </CardHeader>
                             <CardContent className="p-6">
-                              <div className="space-y-2">
-                                {stats.ngrams.trigram.map((item, index) => (
-                                  <div
-                                    key={`trigram-${index}`}
-                                    className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
+                              <div className="h-40 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart
+                                    data={stats.ngrams.trigram
+                                      .slice(0, 10)
+                                      .map((item: any) => ({
+                                        name: item.ngram.replace(/_/g, " "),
+                                        value: item.count,
+                                      }))}
+                                    margin={{ top: 5, right: 5, left: 0, bottom: 20 }}
                                   >
-                                    <span className="truncate flex-1">
-                                      {item.ngram.replace(/_/g, " ")}
-                                    </span>
-                                    <Badge
-                                      variant="outline"
-                                      className="ml-2 shrink-0"
-                                    >
-                                      {item.count}
-                                    </Badge>
-                                  </div>
-                                ))}
+                                    <XAxis
+                                      dataKey="name"
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                      interval={0}
+                                      angle={-30}
+                                      textAnchor="end"
+                                    />
+                                    <YAxis
+                                      tick={{ fontSize: 8 }}
+                                      tickLine={false}
+                                      axisLine={false}
+                                    />
+                                    <Tooltip
+                                      cursor={{ fill: "#8b5cf633" }}
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length > 0) {
+                                          const data = payload[0].payload; // access the original payload
+                                          const lemma = data.name || "Unknown";
+                                          const count = typeof data.value === "number" ? data.value : 0;
+                                          return (
+                                            <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
+                                              <div className="flex items-center gap-2 mb-1.5">
+                                                <span className="font-semibold text-sm">{lemma}</span>
+                                              </div>
+                                              <div className="text-sm text-muted-foreground tabular-nums">
+                                                {count}
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                    <Bar
+                                      dataKey="value"
+                                      fill="#8b5cf6"
+                                      radius={[3, 3, 0, 0]}
+                                      barSize={Math.max(8, 100 - 10 / 2)}
+                                    />
+                                  </BarChart>
+                                </ResponsiveContainer>
                               </div>
                             </CardContent>
                           </Card>
                         )}
                     </div>
                   )}
+                </div>
+
+                {/* Grammar Section */}
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-semibold">Grammar</h2>
+                  </div>
+
+                  {/* POS Counts */}
+                  {stats.pos_counts &&
+                    Object.keys(stats.pos_counts).length > 0 && (
+                      <Card>
+                        <CardHeader className="p-6 pb-4">
+                          <CardTitle>Part-of-Speech Tags</CardTitle>
+                          <CardDescription>
+                            Distribution of grammatical categories
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                            {Object.entries(stats.pos_counts)
+                              .sort(([, a], [, b]) => b - a)
+                              .map(([pos, count]) => {
+                                const posDescriptions: Record<string, string> =
+                                  {
+                                    NOUN: "Noun",
+                                    VERB: "Verb",
+                                    ADP: "Adposition",
+                                    DET: "Determiner",
+                                    PRON: "Pronoun",
+                                    ADJ: "Adjective",
+                                    ADV: "Adverb",
+                                    CCONJ: "Coordinating Conjunction",
+                                    PART: "Particle",
+                                    NUM: "Numeral",
+                                    X: "Other",
+                                    ".": "Punctuation",
+                                    PROPN: "Proper Noun",
+                                    AUX: "Auxiliary Verb",
+                                    SCONJ: "Subordinating Conjunction",
+                                    INTJ: "Interjection",
+                                    PUNCT: "Punctuation",
+                                    SYM: "Symbol",
+                                  };
+                                const description = posDescriptions[pos] || pos;
+                                return (
+                                  <div
+                                    key={pos}
+                                    className="flex flex-col gap-1 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-medium text-sm">
+                                        {description}
+                                      </span>
+                                      <Badge
+                                        variant="secondary"
+                                        className="shrink-0"
+                                      >
+                                        {count.toLocaleString()}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                 </div>
               </TabsContent>
 
