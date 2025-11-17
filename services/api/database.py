@@ -1,5 +1,4 @@
 import os
-import ssl
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
 from bson import ObjectId
@@ -33,13 +32,24 @@ def get_client():
             # Use tlsAllowInvalidCertificates to bypass SSL certificate validation
             # This helps with TLS handshake errors in development environments
             # WARNING: Only use this in development, not production!
-            _client = AsyncIOMotorClient(
-                uri,
-                tlsAllowInvalidCertificates=True,
-                serverSelectionTimeoutMS=30000,
-                connectTimeoutMS=30000,
-                socketTimeoutMS=30000,
-            )
+            # Check environment to ensure this is only used in development
+            env = os.getenv("ENV", "development")
+            if env == "development":
+                _client = AsyncIOMotorClient(
+                    uri,
+                    tlsAllowInvalidCertificates=True,
+                    serverSelectionTimeoutMS=30000,
+                    connectTimeoutMS=30000,
+                    socketTimeoutMS=30000,
+                )
+            else:
+                # Production: use proper certificate validation
+                _client = AsyncIOMotorClient(
+                    uri,
+                    serverSelectionTimeoutMS=30000,
+                    connectTimeoutMS=30000,
+                    socketTimeoutMS=30000,
+                )
         else:
             # For local MongoDB, no SSL needed
             _client = AsyncIOMotorClient(MONGODB_URI)
