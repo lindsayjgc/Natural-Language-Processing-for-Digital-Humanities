@@ -17,6 +17,7 @@ sentencepiece   # required by many transformer tokenizers
 # Document I/O (optional but recommended for .doc/.pdf/.rtf support)
 docx2txt
 python-docx
+textract  # Required for PDF and legacy .doc support
 
 # API
 fastapi

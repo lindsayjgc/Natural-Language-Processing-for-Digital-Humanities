@@ -1,18 +1,18 @@
 "use client";
 
+import { BarChart3, BookOpen, Clock, Eye, TrendingUp } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiClient, type Document } from "@/lib/api";
 import { aggregateStats, sentimentToPolarity } from "@/lib/aggregateStats";
+import { apiClient, type Document } from "@/lib/api";
 import {
-  calculateFleschReadingEase,
   calculateFleschKincaidGradeLevel,
+  calculateFleschReadingEase,
   formatReadabilityScore,
 } from "@/lib/readability";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { BarChart3, BookOpen, TrendingUp, Clock, Eye } from "lucide-react";
 
 interface StatsData {
   totalDocuments: number;
@@ -58,10 +58,10 @@ export default function StatsPage() {
 
       // Fetch all user documents
       const userDocuments = await apiClient.getUserDocuments(user.id);
-      
+
       // Filter to only completed documents
       const completedDocuments = userDocuments.documents.filter(
-        (doc) => doc.status === "completed"
+        (doc) => doc.status === "completed",
       );
 
       if (completedDocuments.length === 0) {
@@ -91,8 +91,10 @@ export default function StatsPage() {
       }
 
       // Fetch full document details with stats for each completed document
-      const documentsWithStats: Array<{ stats: NonNullable<Document["stats"]> }> = [];
-      
+      const documentsWithStats: Array<{
+        stats: NonNullable<Document["stats"]>;
+      }> = [];
+
       // Fetch documents in parallel (batch of 10 at a time)
       const batchSize = 10;
       for (let i = 0; i < completedDocuments.length; i += batchSize) {
@@ -101,10 +103,10 @@ export default function StatsPage() {
           apiClient.getDocument(user.id, doc._id).catch((err) => {
             console.error(`Failed to fetch document ${doc._id}:`, err);
             return null;
-          })
+          }),
         );
         const batchResults = await Promise.all(batchPromises);
-        
+
         for (const doc of batchResults) {
           if (doc?.stats) {
             documentsWithStats.push({ stats: doc.stats });
@@ -114,7 +116,7 @@ export default function StatsPage() {
 
       // Aggregate stats
       const aggregated = aggregateStats(documentsWithStats);
-      
+
       // Calculate additional insights
       const averageWordsPerDocument =
         aggregated.totalDocuments > 0
@@ -125,12 +127,12 @@ export default function StatsPage() {
 
       const readabilityScore = calculateFleschReadingEase(
         aggregated.totalTokens,
-        aggregated.totalSentences
+        aggregated.totalSentences,
       );
 
       const readabilityGrade = calculateFleschKincaidGradeLevel(
         aggregated.totalTokens,
-        aggregated.totalSentences
+        aggregated.totalSentences,
       );
 
       // Get readability level description
@@ -148,7 +150,9 @@ export default function StatsPage() {
 
       const averageSentenceLength =
         aggregated.totalSentences > 0
-          ? Math.round((aggregated.totalTokens / aggregated.totalSentences) * 10) / 10
+          ? Math.round(
+              (aggregated.totalTokens / aggregated.totalSentences) * 10,
+            ) / 10
           : 0;
 
       // Estimate reading time (average 200 words per minute)
@@ -217,7 +221,9 @@ export default function StatsPage() {
       });
     } catch (err) {
       console.error("Failed to fetch stats:", err);
-      setError(err instanceof Error ? err.message : "Failed to load statistics");
+      setError(
+        err instanceof Error ? err.message : "Failed to load statistics",
+      );
     } finally {
       setLoading(false);
     }
@@ -235,22 +241,31 @@ export default function StatsPage() {
             <div className="flex items-center gap-3 mb-3">
               <BarChart3 className="h-8 w-8 text-violet-600" />
               <h1 className="text-4xl font-bold">Statistics Summary</h1>
-              <Badge variant="secondary" className="ml-2 bg-violet-100 text-violet-700 border-violet-200">
+              <Badge
+                variant="secondary"
+                className="ml-2 bg-violet-100 text-violet-700 border-violet-200"
+              >
                 Overview
               </Badge>
             </div>
             <p className="text-lg text-gray-600 ml-11">
-              Comprehensive analytics and insights aggregated across all your documents
+              Comprehensive analytics and insights aggregated across all your
+              documents
             </p>
             <p className="text-sm text-gray-500 ml-11 mt-1">
-              This is a summary view. For detailed analysis of individual documents, visit the document details page.
+              This is a summary view. For detailed analysis of individual
+              documents, visit the document details page.
             </p>
           </div>
-          
+
           {loading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(9)].map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full" />
+              {Array.from({ length: 9 }, (_, i) => (
+                <Skeleton
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Static loading skeletons, order never changes
+                  key={`skeleton-loading-${i}`}
+                  className="h-32 w-full"
+                />
               ))}
             </div>
           )}
@@ -326,7 +341,8 @@ export default function StatsPage() {
                       {stats.estimatedReadingTime}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {stats.estimatedReadingTime === 1 ? "minute" : "minutes"} @ 200 WPM
+                      {stats.estimatedReadingTime === 1 ? "minute" : "minutes"}{" "}
+                      @ 200 WPM
                     </p>
                   </div>
                 </div>
@@ -391,7 +407,9 @@ export default function StatsPage() {
 
               {/* Readability & Complexity Section */}
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Readability & Complexity</h2>
+                <h2 className="text-2xl font-semibold mb-4">
+                  Readability & Complexity
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-6 rounded-xl border border-violet-200 shadow-sm">
                     <h3 className="text-sm font-medium mb-2 text-gray-700">
@@ -439,7 +457,9 @@ export default function StatsPage() {
 
               {/* Sentiment Analysis Section */}
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Sentiment Analysis</h2>
+                <h2 className="text-2xl font-semibold mb-4">
+                  Sentiment Analysis
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white p-6 rounded-xl border border-black/10 shadow-sm">
                     <h3 className="text-sm font-medium mb-2 text-gray-700">
@@ -448,9 +468,7 @@ export default function StatsPage() {
                     <p className="text-2xl font-bold text-violet-600 capitalize mb-2">
                       {stats.dominantSentiment}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      Most common emotion
-                    </p>
+                    <p className="text-xs text-gray-500">Most common emotion</p>
                   </div>
 
                   <div className="bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
@@ -508,7 +526,9 @@ export default function StatsPage() {
 
               {/* Language Patterns Section */}
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Language Patterns</h2>
+                <h2 className="text-2xl font-semibold mb-4">
+                  Language Patterns
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div className="bg-white p-6 rounded-xl border border-black/10 shadow-sm">
                     <h3 className="text-sm font-medium mb-3 text-gray-700">
@@ -563,7 +583,9 @@ export default function StatsPage() {
               {/* N-gram Statistics */}
               {stats.totalBigrams > 0 || stats.totalTrigrams > 0 ? (
                 <div className="mb-8">
-                  <h2 className="text-2xl font-semibold mb-4">N-gram Statistics</h2>
+                  <h2 className="text-2xl font-semibold mb-4">
+                    N-gram Statistics
+                  </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white p-6 rounded-xl border border-black/10 shadow-sm">
                       <h3 className="text-sm font-medium mb-2 text-gray-700">

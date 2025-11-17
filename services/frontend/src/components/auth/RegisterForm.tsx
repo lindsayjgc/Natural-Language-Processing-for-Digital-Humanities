@@ -18,7 +18,7 @@ export function RegisterForm({
   onSuccess,
   onSwitchToLogin,
 }: RegisterFormProps) {
-  const [fullName, setFullName] = useState("");
+  const [_fullName, _setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

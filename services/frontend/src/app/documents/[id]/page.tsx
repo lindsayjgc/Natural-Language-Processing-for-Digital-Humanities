@@ -24,12 +24,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import {
   Select,
+  SelectTrigger,
   SelectContent,
   SelectItem,
-  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -191,10 +190,10 @@ export default function DocumentDetailPage() {
                   {document.status === "completed" && stats && (
                     <>
                       <Badge variant="outline" className="font-normal">
-                        {stats.vocab_size.toLocaleString()} words
+                        {stats.vocab_size.toLocaleString()} unique words
                       </Badge>
                       <Badge variant="outline" className="font-normal">
-                        {stats.token_count.toLocaleString()} tokens
+                        {stats.word_count.toLocaleString()} total words
                       </Badge>
                       <Badge variant="outline" className="font-normal">
                         {(stats.type_token_ratio * 100).toFixed(2)}% lexical
@@ -654,7 +653,9 @@ export default function DocumentDetailPage() {
                   <CardContent className="p-6">
                     {/* Helper function to get sentiment colors as hex values */}
                     {(() => {
-                      const getSentimentColor = (emotionName: string): string => {
+                      const getSentimentColor = (
+                        emotionName: string,
+                      ): string => {
                         const normalized = emotionName.toLowerCase();
                         if (
                           normalized.includes("positive") ||
@@ -690,7 +691,9 @@ export default function DocumentDetailPage() {
                         return "#64748B"; // slate-500
                       };
 
-                      const getSentimentLabel = (emotionName: string): string => {
+                      const getSentimentLabel = (
+                        emotionName: string,
+                      ): string => {
                         return emotionName
                           .toLowerCase()
                           .replace(/_/g, " ")
@@ -700,7 +703,8 @@ export default function DocumentDetailPage() {
                       // Transform sentiment data for pie chart
                       const pieData = Object.entries(stats.doc_sentiment)
                         .map(([emotion, score]) => {
-                          const scoreValue = typeof score === "number" ? score : 0;
+                          const scoreValue =
+                            typeof score === "number" ? score : 0;
                           return {
                             name: getSentimentLabel(emotion),
                             value: scoreValue * 100,
@@ -718,7 +722,11 @@ export default function DocumentDetailPage() {
                               <PieChart>
                                 <Tooltip
                                   content={({ active, payload }) => {
-                                    if (active && payload && payload.length > 0) {
+                                    if (
+                                      active &&
+                                      payload &&
+                                      payload.length > 0
+                                    ) {
                                       const data = payload[0];
                                       // Try to get color from payload, or derive it from emotion/name
                                       let color = data.payload?.color;
@@ -745,8 +753,11 @@ export default function DocumentDetailPage() {
                                       }
                                       color = color || "#64748B";
                                       const name = data.name || "Unknown";
-                                      const value = typeof data.value === "number" ? data.value : 0;
-                                      
+                                      const value =
+                                        typeof data.value === "number"
+                                          ? data.value
+                                          : 0;
+
                                       return (
                                         <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
                                           <div className="flex items-center gap-2 mb-1.5">
@@ -780,8 +791,11 @@ export default function DocumentDetailPage() {
                                   strokeWidth={2}
                                   stroke="#fff"
                                 >
-                                  {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  {pieData.map((entry) => (
+                                    <Cell
+                                      key={`cell-${entry.emotion}`}
+                                      fill={entry.color}
+                                    />
                                   ))}
                                 </Pie>
                               </PieChart>
@@ -854,7 +868,7 @@ export default function DocumentDetailPage() {
                           .map((item, index) => {
                             const percentage = item.score * 100;
                             const emotionKey = item.emotion.toLowerCase().replace(/_/g, " ");
-
+                        
                               // Color coding for different sentiment types - modern, muted palette
                               const getSentimentColors = (emotionName: string) => {
                                 const normalized = emotionName.toLowerCase();
@@ -883,31 +897,29 @@ export default function DocumentDetailPage() {
                                 return { bar: "bg-slate-400", bg: "bg-slate-400/20" };
                               };
 
-                              const colors = getSentimentColors(item.emotion);
+                            const colors = getSentimentColors(item.emotion);
+                            // Use sentence text + index as key since sentences might repeat
+                            const sentenceKey = `${item.sentence.substring(0, 50)}-${index}`;
 
-                              return (
-                                <div
-                                  key={`sentence-${index}`}
-                                  className="p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                                >
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`text-xs font-medium capitalize shrink-0 px-2 py-1 rounded-full text-foreground ${colors.bg}`}>
-                                      {emotionKey} {percentage.toFixed(1)}%
-                                    </span>
-                                    <p className="text-sm text-foreground leading-relaxed line-clamp-2 flex-1">
-                                      {item.sentence}
-                                    </p>
-                                  </div>
+                            return (
+                              <div
+                                key={sentenceKey}
+                                className="py-3 first:pt-0 last:pb-0"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-foreground leading-relaxed flex-1">
+                                    {item.sentence}
+                                  </p>
+                                  <span
+                                    className={`text-xs font-medium capitalize shrink-0 px-2 py-1 rounded-full text-foreground ${colors.bg}`}
+                                  >
+                                    {emotionKey} {percentage.toFixed(1)}%
+                                  </span>
                                 </div>
-                              );
-                            })}
-                      </div>
-                        {stats.sentence_sentiment.length > sentenceLimit && (
-                          <div className="mt-4 text-sm text-muted-foreground text-center">
-                            Showing top {sentenceLimit} of{" "}
-                            {stats.sentence_sentiment.length} sentences
-                          </div>
-                        )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </CardContent>
                     </Card>
                   )}

@@ -85,20 +85,65 @@ export const authApi = {
       throw new Error("No authentication token");
     }
 
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    // Create abort controller for timeout (fallback for older browsers)
+    const controller = new AbortController();
+    // Use ReturnType<typeof setTimeout> to handle both Node.js and browser environments
+    let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(
+      () => controller.abort(),
+      10000,
+    ); // 10 second timeout
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        removeAuthToken();
-        throw new Error("Authentication expired");
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        signal: controller.signal,
+      });
+
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
-      throw new Error("Failed to get user info");
-    }
 
-    return response.json();
+      if (!response.ok) {
+        if (response.status === 401) {
+          removeAuthToken();
+          throw new Error("Authentication expired");
+        }
+        if (response.status === 503) {
+          // Database unavailable - don't remove token, but indicate service unavailable
+          throw new Error(
+            "Database service unavailable. Please try again later.",
+          );
+        }
+        const errorData = await response
+          .json()
+          .catch(() => ({ detail: "Failed to get user info" }));
+        throw new Error(errorData.detail || "Failed to get user info");
+      }
+
+      return response.json();
+    } catch (error) {
+      // Clear timeout if it hasn't fired yet
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
+      // Handle network errors (backend not running, timeout, etc.)
+      if (error instanceof TypeError) {
+        throw new Error(
+          "Cannot connect to server. Please ensure the backend is running.",
+        );
+      }
+      if (
+        error instanceof Error &&
+        (error.name === "TimeoutError" || error.name === "AbortError")
+      ) {
+        throw new Error("Request timed out. The server may be unavailable.");
+      }
+      throw error;
+    }
   },
 };
