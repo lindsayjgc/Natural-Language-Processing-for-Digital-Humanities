@@ -22,19 +22,26 @@ export function UploadCard({
       const dropped = Array.from(event.dataTransfer.files ?? []);
       // Filter to supported file types (.txt, .docx, .doc, .pdf, .rtf)
       // Backend handles conversion of PDF and DOC files
-      const supportedFiles = dropped.filter(file => {
+      const supportedFiles = dropped.filter((file) => {
         const fileName = file.name.toLowerCase();
-        return fileName.endsWith('.txt') || fileName.endsWith('.text') ||
-               fileName.endsWith('.docx') || fileName.endsWith('.doc') ||
-               fileName.endsWith('.pdf') || fileName.endsWith('.rtf');
+        return (
+          fileName.endsWith(".txt") ||
+          fileName.endsWith(".text") ||
+          fileName.endsWith(".docx") ||
+          fileName.endsWith(".doc") ||
+          fileName.endsWith(".pdf") ||
+          fileName.endsWith(".rtf")
+        );
       });
-      
+
       if (supportedFiles.length && onDropFiles) {
         onDropFiles(supportedFiles);
       }
       // Optionally show a warning if files were filtered
       if (dropped.length > supportedFiles.length) {
-        console.warn(`${dropped.length - supportedFiles.length} unsupported files were filtered out`);
+        console.warn(
+          `${dropped.length - supportedFiles.length} unsupported files were filtered out`,
+        );
       }
     },
     [onDropFiles],
@@ -48,11 +55,16 @@ export function UploadCard({
     const files = e.target.files ? Array.from(e.target.files) : [];
     // Filter to supported file types (.txt, .docx, .doc, .pdf, .rtf)
     // Backend handles conversion of PDF and DOC files
-    const supportedFiles = files.filter(file => {
+    const supportedFiles = files.filter((file) => {
       const fileName = file.name.toLowerCase();
-      return fileName.endsWith('.txt') || fileName.endsWith('.text') ||
-             fileName.endsWith('.docx') || fileName.endsWith('.doc') ||
-             fileName.endsWith('.pdf') || fileName.endsWith('.rtf');
+      return (
+        fileName.endsWith(".txt") ||
+        fileName.endsWith(".text") ||
+        fileName.endsWith(".docx") ||
+        fileName.endsWith(".doc") ||
+        fileName.endsWith(".pdf") ||
+        fileName.endsWith(".rtf")
+      );
     });
     if (supportedFiles.length && onDropFiles) onDropFiles(supportedFiles);
     // reset so the same file can be selected again
@@ -62,9 +74,19 @@ export function UploadCard({
   return (
     <Card>
       <CardContent className="p-5">
+        {/* biome-ignore lint/a11y/useSemanticElements: div needed for drag-and-drop functionality */}
         <div
+          role="button"
+          tabIndex={0}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
+          onClick={handleBrowseClick}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleBrowseClick();
+            }
+          }}
           className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center hover:border-violet-400 transition-colors cursor-pointer w-full"
         >
           <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-violet-100 text-violet-600">

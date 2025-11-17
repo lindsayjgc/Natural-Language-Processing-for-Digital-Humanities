@@ -63,7 +63,8 @@ export function DocumentsView() {
       // Refresh the document list
       await fetchDocuments();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to upload documents";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to upload documents";
       setError(errorMessage);
     } finally {
       setUploading(false);
@@ -107,7 +108,7 @@ export function DocumentsView() {
 
   const handleUpdateDocument = async (id: string, newName: string) => {
     if (!userId) return;
-    
+
     try {
       setError(null);
       await apiClient.updateDocument(userId, id, newName);
@@ -121,7 +122,7 @@ export function DocumentsView() {
 
   const handleDeleteDocument = async (id: string) => {
     if (!userId) return;
-    
+
     try {
       setError(null);
       await apiClient.deleteDocument(userId, id);
@@ -158,7 +159,7 @@ export function DocumentsView() {
             </div>
           </div>
         )}
-        
+
         <FiltersBar />
         <DocumentsTable
           documents={documents}

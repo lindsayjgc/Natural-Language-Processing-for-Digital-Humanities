@@ -1,7 +1,13 @@
 "use client";
 
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import {
   authApi,
   getAuthToken,
@@ -31,27 +37,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user;
 
   const login = async (credentials: LoginCredentials) => {
-    try {
-      const response = await authApi.login(credentials);
-      setAuthToken(response.access_token);
-      await refreshUser();
-    } catch (error) {
-      throw error;
-    }
+    const response = await authApi.login(credentials);
+    setAuthToken(response.access_token);
+    await refreshUser();
   };
 
   const register = async (userData: RegisterData) => {
-    try {
-      await authApi.register(userData);
-      // After successful registration, log the user in
-      await login({
-        email: userData.email,
-        password: userData.password,
-        remember_me: userData.remember_me,
-      });
-    } catch (error) {
-      throw error;
-    }
+    await authApi.register(userData);
+    // After successful registration, log the user in
+    await login({
+      email: userData.email,
+      password: userData.password,
+      remember_me: userData.remember_me,
+    });
   };
 
   const logout = () => {
@@ -59,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     try {
       const token = getAuthToken();
       if (!token) {
@@ -71,26 +69,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
     } catch (error) {
       // Only log non-network errors to avoid console spam
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (!errorMessage.includes("connect to server") && 
-          !errorMessage.includes("timed out") && 
-          !errorMessage.includes("Database service unavailable")) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      if (
+        !errorMessage.includes("connect to server") &&
+        !errorMessage.includes("timed out") &&
+        !errorMessage.includes("Database service unavailable")
+      ) {
         console.error("Failed to refresh user:", error);
       }
       // Clear user on any error - they'll need to log in again
       setUser(null);
       // Don't remove token on network/database errors - might be temporary
       // Only remove token on authentication errors
-      if (errorMessage.includes("Authentication expired") || errorMessage.includes("401")) {
+      if (
+        errorMessage.includes("Authentication expired") ||
+        errorMessage.includes("401")
+      ) {
         removeAuthToken();
       }
     }
-  };
+  }, []);
 
   // Check for existing token on mount
   useEffect(() => {
     let isMounted = true;
-    
+
     const initializeAuth = async () => {
       try {
         const token = getAuthToken();
@@ -121,7 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let initializationComplete = false;
     const timeoutId = setTimeout(() => {
       if (isMounted && !initializationComplete) {
-        console.warn("Auth initialization timeout - forcing loading to complete");
+        console.warn(
+          "Auth initialization timeout - forcing loading to complete",
+        );
         setIsLoading(false);
       }
     }, 15000); // 15 second max timeout
@@ -135,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       clearTimeout(timeoutId);
     };
-  }, []);
+  }, [refreshUser]);
 
   const value: AuthContextType = {
     user,

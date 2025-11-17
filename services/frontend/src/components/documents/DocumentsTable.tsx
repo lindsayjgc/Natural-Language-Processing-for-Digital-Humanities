@@ -1,8 +1,15 @@
-import { useState } from "react";
-import { RefreshCw, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -12,16 +19,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { Document } from "@/lib/api";
-
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { EditDocumentDialog } from "./EditDialog";
 import { DeleteDocumentDialog } from "./DeleteDialog";
+import { EditDocumentDialog } from "./EditDialog";
 
 type DocumentsTableProps = {
   documents: Document[];
@@ -40,7 +39,9 @@ export function DocumentsTable({
 }: DocumentsTableProps) {
   const router = useRouter();
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
-  const [deletingDocument, setDeletingDocument] = useState<Document | null>(null);
+  const [deletingDocument, setDeletingDocument] = useState<Document | null>(
+    null,
+  );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -128,13 +129,18 @@ export function DocumentsTable({
               <TableHead className="text-gray-600">Document Name</TableHead>
               <TableHead className="text-gray-600">Uploaded</TableHead>
               <TableHead className="text-gray-600">Status</TableHead>
-              <TableHead className="text-right text-gray-600">Actions</TableHead>
+              <TableHead className="text-right text-gray-600">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {documents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-gray-500 py-8">
+                <TableCell
+                  colSpan={4}
+                  className="text-center text-gray-500 py-8"
+                >
                   No documents uploaded yet. Upload some files to get started!
                 </TableCell>
               </TableRow>

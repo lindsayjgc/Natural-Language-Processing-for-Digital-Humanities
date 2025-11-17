@@ -1,24 +1,40 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  aggregateStats,
+  sentimentToAnalysis,
+  sentimentToPolarity,
+} from "@/lib/aggregateStats";
 import { apiClient, type Document } from "@/lib/api";
-import { aggregateStats, sentimentToPolarity, sentimentToAnalysis } from "@/lib/aggregateStats";
-import { calculateFleschReadingEase, calculateFleschKincaidGradeLevel, formatReadabilityScore } from "@/lib/readability";
+import {
+  calculateFleschKincaidGradeLevel,
+  calculateFleschReadingEase,
+  formatReadabilityScore,
+} from "@/lib/readability";
 import { KeywordsCards } from "./KeywordsCards";
 import { ReadabilityCards } from "./ReadabilityCards";
 import { SectionBreak } from "./SectionBreak";
 import { SentimentCards } from "./SentimentCards";
 import { SummaryCards } from "./SummaryCards";
 import { TitleSection } from "./TitleSection";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export function StatisticsView() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [aggregatedStats, setAggregatedStats] = useState<ReturnType<typeof aggregateStats> | null>(null);
+  const [aggregatedStats, setAggregatedStats] = useState<ReturnType<
+    typeof aggregateStats
+  > | null>(null);
 
   const fetchAndAggregateStats = useCallback(async () => {
     if (!user?.id) {
@@ -32,12 +48,12 @@ export function StatisticsView() {
 
       // Fetch all user documents
       const userDocuments = await apiClient.getUserDocuments(user.id);
-      
+
       // Filter to only completed documents
       // Note: getUserDocuments returns documents with stats_id, but we need to fetch
       // each document individually to get the full stats
       const completedDocuments = userDocuments.documents.filter(
-        (doc) => doc.status === "completed"
+        (doc) => doc.status === "completed",
       );
 
       if (completedDocuments.length === 0) {
@@ -48,8 +64,10 @@ export function StatisticsView() {
 
       // Fetch full document details with stats for each completed document
       // Note: getUserDocuments may not include full stats, so we fetch each document
-      const documentsWithStats: Array<{ stats: NonNullable<Document["stats"]> }> = [];
-      
+      const documentsWithStats: Array<{
+        stats: NonNullable<Document["stats"]>;
+      }> = [];
+
       // Fetch documents in parallel (batch of 10 at a time to avoid overwhelming the API)
       const batchSize = 10;
       for (let i = 0; i < completedDocuments.length; i += batchSize) {
@@ -58,10 +76,10 @@ export function StatisticsView() {
           apiClient.getDocument(user.id, doc._id).catch((err) => {
             console.error(`Failed to fetch document ${doc._id}:`, err);
             return null;
-          })
+          }),
         );
         const batchResults = await Promise.all(batchPromises);
-        
+
         for (const doc of batchResults) {
           if (doc?.stats) {
             documentsWithStats.push({ stats: doc.stats });
@@ -74,7 +92,9 @@ export function StatisticsView() {
       setAggregatedStats(aggregated);
     } catch (err) {
       console.error("Failed to fetch and aggregate stats:", err);
-      setError(err instanceof Error ? err.message : "Failed to load statistics");
+      setError(
+        err instanceof Error ? err.message : "Failed to load statistics",
+      );
     } finally {
       setLoading(false);
     }
@@ -106,7 +126,9 @@ export function StatisticsView() {
           <TitleSection />
           <Card className="border-destructive/50 bg-destructive/5">
             <CardHeader>
-              <CardTitle className="text-destructive">Error Loading Statistics</CardTitle>
+              <CardTitle className="text-destructive">
+                Error Loading Statistics
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <CardDescription>{error}</CardDescription>
@@ -128,7 +150,8 @@ export function StatisticsView() {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                You don't have any completed documents yet. Upload and process some documents to see statistics here.
+                You don't have any completed documents yet. Upload and process
+                some documents to see statistics here.
               </CardDescription>
             </CardContent>
           </Card>
@@ -140,11 +163,11 @@ export function StatisticsView() {
   // Calculate readability metrics
   const fleschScore = calculateFleschReadingEase(
     aggregatedStats.totalTokens,
-    aggregatedStats.totalSentences
+    aggregatedStats.totalSentences,
   );
   const gradeLevel = calculateFleschKincaidGradeLevel(
     aggregatedStats.totalTokens,
-    aggregatedStats.totalSentences
+    aggregatedStats.totalSentences,
   );
 
   // Transform sentiment data
@@ -155,7 +178,7 @@ export function StatisticsView() {
   const topKeywords = aggregatedStats.wordFrequencies
     .slice(0, 5)
     .map((wf) => wf.lemma);
-  
+
   const keywordFrequencies = aggregatedStats.wordFrequencies
     .slice(0, 10)
     .map((wf) => ({ keyword: wf.lemma, count: wf.count }));

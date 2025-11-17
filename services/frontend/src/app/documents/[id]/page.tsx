@@ -22,7 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -376,9 +375,9 @@ export default function DocumentDetailPage() {
                             </CardHeader>
                             <CardContent className="p-6">
                               <div className="space-y-2">
-                                {stats.ngrams.unigram.map((item, index) => (
+                                {stats.ngrams.unigram.map((item) => (
                                   <div
-                                    key={`unigram-${index}`}
+                                    key={`unigram-${item.ngram}`}
                                     className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
                                   >
                                     <span className="truncate flex-1">
@@ -410,9 +409,9 @@ export default function DocumentDetailPage() {
                             </CardHeader>
                             <CardContent className="p-6">
                               <div className="space-y-2">
-                                {stats.ngrams.bigram.map((item, index) => (
+                                {stats.ngrams.bigram.map((item) => (
                                   <div
-                                    key={`bigram-${index}`}
+                                    key={`bigram-${item.ngram}`}
                                     className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
                                   >
                                     <span className="truncate flex-1">
@@ -444,9 +443,9 @@ export default function DocumentDetailPage() {
                             </CardHeader>
                             <CardContent className="p-6">
                               <div className="space-y-2">
-                                {stats.ngrams.trigram.map((item, index) => (
+                                {stats.ngrams.trigram.map((item) => (
                                   <div
-                                    key={`trigram-${index}`}
+                                    key={`trigram-${item.ngram}`}
                                     className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
                                   >
                                     <span className="truncate flex-1">
@@ -481,7 +480,9 @@ export default function DocumentDetailPage() {
                   <CardContent className="p-6">
                     {/* Helper function to get sentiment colors as hex values */}
                     {(() => {
-                      const getSentimentColor = (emotionName: string): string => {
+                      const getSentimentColor = (
+                        emotionName: string,
+                      ): string => {
                         const normalized = emotionName.toLowerCase();
                         if (
                           normalized.includes("positive") ||
@@ -513,7 +514,9 @@ export default function DocumentDetailPage() {
                         return "#64748B"; // slate-500
                       };
 
-                      const getSentimentLabel = (emotionName: string): string => {
+                      const getSentimentLabel = (
+                        emotionName: string,
+                      ): string => {
                         return emotionName
                           .toLowerCase()
                           .replace(/_/g, " ")
@@ -523,7 +526,8 @@ export default function DocumentDetailPage() {
                       // Transform sentiment data for pie chart
                       const pieData = Object.entries(stats.doc_sentiment)
                         .map(([emotion, score]) => {
-                          const scoreValue = typeof score === "number" ? score : 0;
+                          const scoreValue =
+                            typeof score === "number" ? score : 0;
                           return {
                             name: getSentimentLabel(emotion),
                             value: scoreValue * 100,
@@ -541,24 +545,45 @@ export default function DocumentDetailPage() {
                               <PieChart>
                                 <Tooltip
                                   content={({ active, payload }) => {
-                                    if (active && payload && payload.length > 0) {
+                                    if (
+                                      active &&
+                                      payload &&
+                                      payload.length > 0
+                                    ) {
                                       const data = payload[0];
                                       // Try to get color from payload, or derive it from emotion/name
                                       let color = data.payload?.color;
                                       if (!color && data.payload?.emotion) {
                                         // Fallback: derive color from emotion name
-                                        const emotionName = data.payload.emotion.toLowerCase();
-                                        if (emotionName.includes("positive") || emotionName.includes("joy") || emotionName.includes("happy")) {
+                                        const emotionName =
+                                          data.payload.emotion.toLowerCase();
+                                        if (
+                                          emotionName.includes("positive") ||
+                                          emotionName.includes("joy") ||
+                                          emotionName.includes("happy")
+                                        ) {
                                           color = "#10B981";
-                                        } else if (emotionName.includes("negative") || emotionName.includes("sad") || emotionName.includes("anger")) {
+                                        } else if (
+                                          emotionName.includes("negative") ||
+                                          emotionName.includes("sad") ||
+                                          emotionName.includes("anger")
+                                        ) {
                                           color = "#EF4444";
-                                        } else if (emotionName.includes("neutral")) {
+                                        } else if (
+                                          emotionName.includes("neutral")
+                                        ) {
                                           color = "#9CA3AF";
-                                        } else if (emotionName.includes("fear")) {
+                                        } else if (
+                                          emotionName.includes("fear")
+                                        ) {
                                           color = "#8B5CF6";
-                                        } else if (emotionName.includes("surprise")) {
+                                        } else if (
+                                          emotionName.includes("surprise")
+                                        ) {
                                           color = "#F59E0B";
-                                        } else if (emotionName.includes("disgust")) {
+                                        } else if (
+                                          emotionName.includes("disgust")
+                                        ) {
                                           color = "#F97316";
                                         } else {
                                           color = "#64748B";
@@ -566,8 +591,11 @@ export default function DocumentDetailPage() {
                                       }
                                       color = color || "#64748B";
                                       const name = data.name || "Unknown";
-                                      const value = typeof data.value === "number" ? data.value : 0;
-                                      
+                                      const value =
+                                        typeof data.value === "number"
+                                          ? data.value
+                                          : 0;
+
                                       return (
                                         <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg p-3 z-50">
                                           <div className="flex items-center gap-2 mb-1.5">
@@ -601,8 +629,11 @@ export default function DocumentDetailPage() {
                                   strokeWidth={2}
                                   stroke="#fff"
                                 >
-                                  {pieData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  {pieData.map((entry) => (
+                                    <Cell
+                                      key={`cell-${entry.emotion}`}
+                                      fill={entry.color}
+                                    />
                                   ))}
                                 </Pie>
                               </PieChart>
@@ -650,55 +681,91 @@ export default function DocumentDetailPage() {
                       </CardHeader>
                       <CardContent className="p-4">
                         <div className="divide-y divide-border">
-                        {stats.sentence_sentiment
-                          .map((item, index) => {
+                          {stats.sentence_sentiment.map((item, index) => {
                             const percentage = item.score * 100;
-                            const emotionKey = item.emotion.toLowerCase().replace(/_/g, " ");
+                            const emotionKey = item.emotion
+                              .toLowerCase()
+                              .replace(/_/g, " ");
 
-                              // Color coding for different sentiment types - modern, muted palette
-                              const getSentimentColors = (emotionName: string) => {
-                                const normalized = emotionName.toLowerCase();
-                                if (normalized.includes("positive") || normalized.includes("joy") || normalized.includes("happy")) {
-                                  return { bar: "bg-emerald-400", bg: "bg-emerald-400/20" };
-                                }
-                                if (normalized.includes("negative") || normalized.includes("sad") || normalized.includes("anger")) {
-                                  return { bar: "bg-rose-400", bg: "bg-rose-400/20" };
-                                }
-                                if (normalized.includes("neutral")) {
-                                  return { bar: "bg-zinc-400", bg: "bg-zinc-400/20" };
-                                }
-                                if (normalized.includes("fear")) {
-                                  return { bar: "bg-violet-400", bg: "bg-violet-400/20" };
-                                }
-                                if (normalized.includes("surprise")) {
-                                  return { bar: "bg-amber-400", bg: "bg-amber-400/20" };
-                                }
-                                if (normalized.includes("disgust")) {
-                                  return { bar: "bg-orange-400", bg: "bg-orange-400/20" };
-                                }
-                                // Default to slate for unknown emotions
-                                return { bar: "bg-slate-400", bg: "bg-slate-400/20" };
+                            // Color coding for different sentiment types - modern, muted palette
+                            const getSentimentColors = (
+                              emotionName: string,
+                            ) => {
+                              const normalized = emotionName.toLowerCase();
+                              if (
+                                normalized.includes("positive") ||
+                                normalized.includes("joy") ||
+                                normalized.includes("happy")
+                              ) {
+                                return {
+                                  bar: "bg-emerald-400",
+                                  bg: "bg-emerald-400/20",
+                                };
+                              }
+                              if (
+                                normalized.includes("negative") ||
+                                normalized.includes("sad") ||
+                                normalized.includes("anger")
+                              ) {
+                                return {
+                                  bar: "bg-rose-400",
+                                  bg: "bg-rose-400/20",
+                                };
+                              }
+                              if (normalized.includes("neutral")) {
+                                return {
+                                  bar: "bg-zinc-400",
+                                  bg: "bg-zinc-400/20",
+                                };
+                              }
+                              if (normalized.includes("fear")) {
+                                return {
+                                  bar: "bg-violet-400",
+                                  bg: "bg-violet-400/20",
+                                };
+                              }
+                              if (normalized.includes("surprise")) {
+                                return {
+                                  bar: "bg-amber-400",
+                                  bg: "bg-amber-400/20",
+                                };
+                              }
+                              if (normalized.includes("disgust")) {
+                                return {
+                                  bar: "bg-orange-400",
+                                  bg: "bg-orange-400/20",
+                                };
+                              }
+                              // Default to slate for unknown emotions
+                              return {
+                                bar: "bg-slate-400",
+                                bg: "bg-slate-400/20",
                               };
+                            };
 
-                              const colors = getSentimentColors(item.emotion);
+                            const colors = getSentimentColors(item.emotion);
+                            // Use sentence text + index as key since sentences might repeat
+                            const sentenceKey = `${item.sentence.substring(0, 50)}-${index}`;
 
-                              return (
-                                <div
-                                  key={`sentence-${index}`}
-                                  className="py-3 first:pt-0 last:pb-0"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <p className="text-sm text-foreground leading-relaxed flex-1">
-                                      {item.sentence}
-                                    </p>
-                                    <span className={`text-xs font-medium capitalize shrink-0 px-2 py-1 rounded-full text-foreground ${colors.bg}`}>
-                                      {emotionKey} {percentage.toFixed(1)}%
-                                    </span>
-                                  </div>
+                            return (
+                              <div
+                                key={sentenceKey}
+                                className="py-3 first:pt-0 last:pb-0"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-foreground leading-relaxed flex-1">
+                                    {item.sentence}
+                                  </p>
+                                  <span
+                                    className={`text-xs font-medium capitalize shrink-0 px-2 py-1 rounded-full text-foreground ${colors.bg}`}
+                                  >
+                                    {emotionKey} {percentage.toFixed(1)}%
+                                  </span>
                                 </div>
-                              );
-                            })}
-                      </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </CardContent>
                     </Card>
                   )}

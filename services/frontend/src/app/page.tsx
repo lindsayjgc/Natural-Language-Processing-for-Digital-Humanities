@@ -2,7 +2,6 @@
 
 import {
   BarChart3,
-  BookOpen,
   Brain,
   FileText,
   Sparkles,
@@ -15,7 +14,6 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { DocumentsView } from "@/components/documents/DocumentsView";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
 
 function LandingPage() {
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
