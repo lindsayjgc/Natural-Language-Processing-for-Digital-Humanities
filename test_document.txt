@@ -1,0 +1,1 @@
+This is a test document for NLP analysis. It contains multiple sentences to analyze sentiment and vocabulary patterns. The quick brown fox jumps over the lazy dog. Natural language processing is fascinating!
