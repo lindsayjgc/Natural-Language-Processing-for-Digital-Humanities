@@ -29,8 +29,8 @@ export interface SentenceSentiment {
 }
 
 export interface DocumentStats {
-	vocab_size: number;
-	token_count: number;
+	vocab_size: number; // Unique words (vocabulary size)
+	word_count: number; // Total words/tokens
 	type_token_ratio: number;
 	doc_sentiment: Record<string, number>;
 	sentiment_method: string;
@@ -43,6 +43,8 @@ export interface DocumentStats {
 	pos_counts?: Record<string, number>;
 	sentence_sentiment?: SentenceSentiment[];
 	file?: string;
+	sentence_count?: number;
+	char_count?: number;
 }
 
 export interface UserDocuments {
@@ -119,7 +121,7 @@ class ApiClient {
 		_onProgress?: (progress: number) => void
 	): Promise<UploadResponse> {
 		const formData = new FormData();
-		formData.append('user_id', userId);
+		// Note: user_id is extracted from JWT token on backend, don't send it in form data
 		formData.append('file', file);
 
 		const token = getAuthToken();
@@ -136,8 +138,28 @@ class ApiClient {
 			});
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`Upload Error: ${response.status} - ${errorText}`);
+				let errorMessage = `Upload failed (${response.status})`;
+				try {
+					const errorData = await response.json();
+					// Extract detail from FastAPI error response
+					if (errorData.detail) {
+						errorMessage = errorData.detail;
+					} else if (typeof errorData === 'string') {
+						errorMessage = errorData;
+					}
+				} catch {
+					// If JSON parsing fails, try text
+					const errorText = await response.text();
+					if (errorText) {
+						try {
+							const parsed = JSON.parse(errorText);
+							errorMessage = parsed.detail || errorText;
+						} catch {
+							errorMessage = errorText || errorMessage;
+						}
+					}
+				}
+				throw new Error(errorMessage);
 			}
 
 			return response.json();

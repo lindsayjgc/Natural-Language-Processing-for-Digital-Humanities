@@ -20,7 +20,20 @@ export function UploadCard({
     (event: React.DragEvent<HTMLDivElement>) => {
       event.preventDefault();
       const dropped = Array.from(event.dataTransfer.files ?? []);
-      if (dropped.length && onDropFiles) onDropFiles(dropped);
+      // Filter out unsupported file types (only allow .txt files)
+      const txtFiles = dropped.filter(file => {
+        const fileName = file.name.toLowerCase();
+        return fileName.endsWith('.txt') || fileName.endsWith('.text');
+      });
+      
+      if (txtFiles.length && onDropFiles) {
+        onDropFiles(txtFiles);
+      } else if (dropped.length > txtFiles.length) {
+        // Some files were filtered out - could show a warning here if needed
+        if (txtFiles.length > 0 && onDropFiles) {
+          onDropFiles(txtFiles);
+        }
+      }
     },
     [onDropFiles],
   );
@@ -31,7 +44,12 @@ export function UploadCard({
   };
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
-    if (files.length && onDropFiles) onDropFiles(files);
+    // Filter to only .txt files (though accept attribute should handle this)
+    const txtFiles = files.filter(file => {
+      const fileName = file.name.toLowerCase();
+      return fileName.endsWith('.txt') || fileName.endsWith('.text');
+    });
+    if (txtFiles.length && onDropFiles) onDropFiles(txtFiles);
     // reset so the same file can be selected again
     e.currentTarget.value = "";
   };
@@ -52,6 +70,10 @@ export function UploadCard({
           </div>
           <div className="text-gray-600 mb-8">
             or click to browse your computer
+            <br />
+            <span className="text-sm text-gray-500 mt-2 block">
+              Supported formats: .txt files only
+            </span>
           </div>
           <Button
             onClick={handleBrowseClick}
@@ -65,6 +87,7 @@ export function UploadCard({
             ref={inputRef}
             type="file"
             multiple
+            accept=".txt,.text"
             className="sr-only"
             onChange={handleInputChange}
           />
