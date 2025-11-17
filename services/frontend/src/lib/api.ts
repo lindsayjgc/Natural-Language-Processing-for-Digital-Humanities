@@ -139,24 +139,20 @@ class ApiClient {
 
 			if (!response.ok) {
 				let errorMessage = `Upload failed (${response.status})`;
-				try {
-					const errorData = await response.json();
-					// Extract detail from FastAPI error response
-					if (errorData.detail) {
-						errorMessage = errorData.detail;
-					} else if (typeof errorData === 'string') {
-						errorMessage = errorData;
-					}
-				} catch {
-					// If JSON parsing fails, try text
-					const errorText = await response.text();
-					if (errorText) {
-						try {
-							const parsed = JSON.parse(errorText);
-							errorMessage = parsed.detail || errorText;
-						} catch {
-							errorMessage = errorText || errorMessage;
+				// Read text first, then try to parse as JSON to avoid consuming body stream twice
+				const errorText = await response.text();
+				if (errorText) {
+					try {
+						const parsed = JSON.parse(errorText);
+						if (parsed.detail) {
+							errorMessage = parsed.detail;
+						} else if (typeof parsed === 'string') {
+							errorMessage = parsed;
+						} else {
+							errorMessage = errorText;
 						}
+					} catch {
+						errorMessage = errorText || errorMessage;
 					}
 				}
 				throw new Error(errorMessage);
