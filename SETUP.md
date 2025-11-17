@@ -413,6 +413,37 @@ print(client.server_info())
 "
 ```
 
+**Problem**: `SSL handshake failed: TLSV1_ALERT_INTERNAL_ERROR`
+This error indicates a Python/OpenSSL compatibility issue. Try these solutions:
+
+**Solution 1: Use Standard Connection String (Recommended)**
+Instead of `mongodb+srv://`, use the standard connection string from MongoDB Atlas:
+1. Go to MongoDB Atlas → Connect → Drivers
+2. Select Python
+3. Choose **"Standard connection string"** (not "SRV connection string")
+4. It will look like: `mongodb://ac-xxx-shard-00-00.xxx.mongodb.net:27017,...`
+5. Update your `.env` file with this connection string
+
+**Solution 2: Update OpenSSL**
+```bash
+# macOS
+brew upgrade openssl
+brew upgrade python@3.11
+
+# Linux
+sudo apt-get update
+sudo apt-get upgrade openssl python3.11
+```
+
+**Solution 3: Check Network Access**
+- Ensure your IP is whitelisted in MongoDB Atlas Network Access
+- For development, temporarily allow `0.0.0.0/0` (not recommended for production)
+
+**Solution 4: Verify Connection String Format**
+Ensure your connection string includes:
+- Correct username and password (URL-encoded if they contain special characters)
+- Database name: `mongodb+srv://user:pass@cluster.mongodb.net/nlp_library?retryWrites=true&w=majority`
+
 ### Frontend Issues
 
 **Problem**: `pnpm` command not found
