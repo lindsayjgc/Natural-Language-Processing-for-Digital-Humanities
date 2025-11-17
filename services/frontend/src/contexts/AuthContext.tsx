@@ -70,27 +70,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await authApi.getCurrentUser();
       setUser(userData);
     } catch (error) {
-      console.error("Failed to refresh user:", error);
+      // Only log non-network errors to avoid console spam
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (!errorMessage.includes("connect to server") && 
+          !errorMessage.includes("timed out") && 
+          !errorMessage.includes("Database service unavailable")) {
+        console.error("Failed to refresh user:", error);
+      }
+      // Clear user on any error - they'll need to log in again
       setUser(null);
+      // Don't remove token on network/database errors - might be temporary
+      // Only remove token on authentication errors
+      if (errorMessage.includes("Authentication expired") || errorMessage.includes("401")) {
+        removeAuthToken();
+      }
     }
   };
 
   // Check for existing token on mount
   useEffect(() => {
+    let isMounted = true;
+    
     const initializeAuth = async () => {
-      const token = getAuthToken();
-      if (token) {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          // No token, set loading to false immediately
+          if (isMounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Token exists, try to refresh user
         try {
           await refreshUser();
         } catch (error) {
-          console.error("Failed to initialize auth:", error);
-          removeAuthToken();
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          // Only log non-network errors
+          if (!errorMessage.includes("connect to server") && !errorMessage.includes("timed out")) {
+            console.error("Failed to initialize auth:", error);
+            // Only remove token on auth errors, not network errors
+            if (errorMessage.includes("Authentication expired") || errorMessage.includes("401")) {
+              removeAuthToken();
+            }
+          }
+        }
+      } catch (error) {
+        // Catch any unexpected errors
+        console.error("Unexpected error during auth initialization:", error);
+      } finally {
+        // Always set loading to false, even if something went wrong
+        if (isMounted) {
+          setIsLoading(false);
         }
       }
-      setIsLoading(false);
     };
 
-    initializeAuth();
+    // Add a safety timeout to ensure loading always stops
+    const timeoutId = setTimeout(() => {
+      if (isMounted) {
+        console.warn("Auth initialization timeout - forcing loading to complete");
+        setIsLoading(false);
+      }
+    }, 15000); // 15 second max timeout
+
+    initializeAuth().finally(() => {
+      clearTimeout(timeoutId);
+    });
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const value: AuthContextType = {

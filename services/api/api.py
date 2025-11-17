@@ -77,8 +77,19 @@ def convert_to_native_types(obj):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Test database connection on startup"""
-    await test_connection()
+    """Test database connection on startup (non-blocking with timeout)"""
+    # Test connection with timeout - don't block startup if it fails
+    import asyncio
+    try:
+        # Run connection test with 5 second timeout - won't block startup
+        await asyncio.wait_for(test_connection(), timeout=5.0)
+    except asyncio.TimeoutError:
+        print("Warning: MongoDB connection test timed out. Server will start anyway.")
+        print("Database operations may fail until connection is established.")
+    except Exception as e:
+        # Log but don't fail startup
+        print(f"Warning: Could not test MongoDB connection on startup: {e}")
+        print("Server will start, but database operations may fail until connection is established.")
     yield
 
 
@@ -300,66 +311,120 @@ async def delete_document_endpoint(
 @app.post("/auth/register", response_model=User)
 async def register(user: UserCreate):
     """Register a new user"""
-    existing_user = await get_user_by_email(user.email)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure
+    
+    try:
+        existing_user = await get_user_by_email(user.email)
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
 
-    # Create new user
-    hashed_password = get_password_hash(user.password)
-    user_id = await create_user(user.email, hashed_password)
+        # Create new user
+        hashed_password = get_password_hash(user.password)
+        user_id = await create_user(user.email, hashed_password)
 
-    created_user = await get_user_by_id(user_id)
-    # Return user info (without password)
-    return User(
-        id=user_id,
-        email=user.email,
-        created_at=created_user["created_at"],
-    )
+        created_user = await get_user_by_id(user_id)
+        # Return user info (without password)
+        return User(
+            id=user_id,
+            email=user.email,
+            created_at=created_user["created_at"],
+        )
+    except (ServerSelectionTimeoutError, ConnectionFailure, OperationFailure) as e:
+        # Database connection error - return 503 Service Unavailable
+        raise HTTPException(
+            status_code=503,
+            detail="Database service unavailable. Please try again later."
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 400)
+        raise
+    except Exception as e:
+        # Other unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred during registration: {str(e)}"
+        )
 
 
 @app.post("/auth/login", response_model=Token)
 async def login(user_credentials: UserLogin):
     """Login user and return access token"""
-    # Get user from database
-    user = await get_user_by_email(user_credentials.email)
-    if not user or not verify_password(
-        user_credentials.password, user["hashed_password"]
-    ):
-        raise HTTPException(
-            status_code=401,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+    from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure
+    
+    try:
+        # Get user from database
+        user = await get_user_by_email(user_credentials.email)
+        if not user or not verify_password(
+            user_credentials.password, user["hashed_password"]
+        ):
+            raise HTTPException(
+                status_code=401,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        # Create access token with different expiration based on remember_me
+        if user_credentials.remember_me:
+            # Extended token for 30 days when remember me is checked
+            access_token_expires = timedelta(days=30)
+        else:
+            # Standard token expiration
+            access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+
+        access_token = create_access_token(
+            data={"sub": user["_id"]}, expires_delta=access_token_expires
         )
 
-    # Create access token with different expiration based on remember_me
-    if user_credentials.remember_me:
-        # Extended token for 30 days when remember me is checked
-        access_token_expires = timedelta(days=30)
-    else:
-        # Standard token expiration
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-
-    access_token = create_access_token(
-        data={"sub": user["_id"]}, expires_delta=access_token_expires
-    )
-
-    return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer"}
+    except (ServerSelectionTimeoutError, ConnectionFailure, OperationFailure) as e:
+        # Database connection error - return 503 Service Unavailable
+        raise HTTPException(
+            status_code=503,
+            detail="Database service unavailable. Please try again later."
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 401)
+        raise
+    except Exception as e:
+        # Other unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred during login: {str(e)}"
+        )
 
 
 @app.get("/auth/me", response_model=User)
 async def get_current_user_info(current_user_id: str = Depends(get_current_user)):
     """Get current user information"""
-    user = await get_user_by_id(current_user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    from pymongo.errors import ServerSelectionTimeoutError, ConnectionFailure, OperationFailure
+    
+    try:
+        user = await get_user_by_id(current_user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-    # Parse the ISO string back to datetime if necessary
-    created_at = user["created_at"]
-    if isinstance(created_at, str):
-        created_at = datetime.fromisoformat(created_at)
+        # Parse the ISO string back to datetime if necessary
+        created_at = user["created_at"]
+        if isinstance(created_at, str):
+            created_at = datetime.fromisoformat(created_at)
 
-    return User(
-        id=user["_id"],
-        email=user["email"],
-        created_at=created_at,
-    )
+        return User(
+            id=user["_id"],
+            email=user["email"],
+            created_at=created_at,
+        )
+    except (ServerSelectionTimeoutError, ConnectionFailure, OperationFailure) as e:
+        # Database connection error - return 503 Service Unavailable
+        raise HTTPException(
+            status_code=503,
+            detail="Database service unavailable. Please try again later."
+        )
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404)
+        raise
+    except Exception as e:
+        # Other unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while retrieving user information: {str(e)}"
+        )

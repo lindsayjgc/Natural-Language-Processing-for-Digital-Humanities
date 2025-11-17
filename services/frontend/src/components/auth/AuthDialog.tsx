@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -43,6 +44,11 @@ export function AuthDialog({
           <DialogTitle>
             {mode === "login" ? "Welcome Back" : "Create Your Account"}
           </DialogTitle>
+          <DialogDescription>
+            {mode === "login"
+              ? "Sign in to your account to continue"
+              : "Enter your details to create a new account"}
+          </DialogDescription>
         </DialogHeader>
         {mode === "login" ? (
           <LoginForm
