@@ -103,7 +103,10 @@ export function UploadCard({
             </span>
           </div>
           <Button
-            onClick={handleBrowseClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBrowseClick();
+            }}
             disabled={uploading}
             size="lg"
             className="bg-violet-600 hover:bg-violet-700"
