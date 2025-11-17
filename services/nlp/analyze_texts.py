@@ -72,6 +72,21 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
 
     doc_sent, sent_df, sent_method = analyze_sentiment(text, sent_threshold=sent_threshold, max_sentences=max_sentences)
 
+    # Prepare data structures for return (matching backend model)
+    word_frequencies = [{"lemma": lemma, "count": count} for lemma, count in prep["freq_lemmas"].most_common(topn)]
+    ngrams_data = {}
+    for name, counter in ngram_counts.items():
+        ngrams_data[name] = [{"ngram": ngram, "count": count} for ngram, count in counter.most_common(topn)]
+    pos_counts_dict = dict(pos_counts)
+    sentence_sentiment = []
+    if sent_df is not None and not sent_df.empty:
+        for _, row in sent_df.iterrows():
+            sentence_sentiment.append({
+                "sentence": row.get("sentence", ""),
+                "emotion": row.get("emotion", ""),
+                "score": float(row.get("score", 0.0))
+            })
+
     if write_csv:
         outdir.mkdir(parents=True, exist_ok=True)
 
@@ -110,7 +125,7 @@ def _analyze_text_blob(text: str, tag: str, outdir: Path, *, ngram_ns, topn, sen
         plc_df.to_csv(outdir / f"{tag}_locations.csv", index=False)
 
     # Metadata summary
-    meta = {
+    analysis_results = {
         "sentiment_method": sent_method,
         "doc_sentiment": doc_sent,
         "vocab_size": prep["vocab_size"],
