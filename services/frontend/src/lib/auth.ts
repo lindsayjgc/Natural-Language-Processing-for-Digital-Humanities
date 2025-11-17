@@ -87,7 +87,7 @@ export const authApi = {
 
     // Create abort controller for timeout (fallback for older browsers)
     const controller = new AbortController();
-    let timeoutId: NodeJS.Timeout | null = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    let timeoutId: number | null = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -124,7 +124,7 @@ export const authApi = {
       }
       
       // Handle network errors (backend not running, timeout, etc.)
-      if (error instanceof TypeError && error.message.includes("fetch")) {
+      if (error instanceof TypeError) {
         throw new Error("Cannot connect to server. Please ensure the backend is running.");
       }
       if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {

@@ -103,19 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Token exists, try to refresh user
-        try {
-          await refreshUser();
-        } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          // Only log non-network errors
-          if (!errorMessage.includes("connect to server") && !errorMessage.includes("timed out")) {
-            console.error("Failed to initialize auth:", error);
-            // Only remove token on auth errors, not network errors
-            if (errorMessage.includes("Authentication expired") || errorMessage.includes("401")) {
-              removeAuthToken();
-            }
-          }
-        }
+        // refreshUser handles its own errors internally, so we don't need nested try-catch
+        await refreshUser();
       } catch (error) {
         // Catch any unexpected errors
         console.error("Unexpected error during auth initialization:", error);
@@ -128,14 +117,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Add a safety timeout to ensure loading always stops
+    // Use a ref to track if initialization has completed
+    let initializationComplete = false;
     const timeoutId = setTimeout(() => {
-      if (isMounted) {
+      if (isMounted && !initializationComplete) {
         console.warn("Auth initialization timeout - forcing loading to complete");
         setIsLoading(false);
       }
     }, 15000); // 15 second max timeout
 
     initializeAuth().finally(() => {
+      initializationComplete = true;
       clearTimeout(timeoutId);
     });
 
