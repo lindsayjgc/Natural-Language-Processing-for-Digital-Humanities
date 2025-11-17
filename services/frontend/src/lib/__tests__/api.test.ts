@@ -74,7 +74,7 @@ describe("API Client", () => {
         processing_status: "completed",
         stats: {
           vocab_size: 10,
-          token_count: 20,
+          word_count: 20,
         },
       };
 
@@ -121,7 +121,7 @@ describe("API Client", () => {
         status: "completed",
         stats: {
           vocab_size: 100,
-          token_count: 500,
+          word_count: 500,
           type_token_ratio: 0.2,
           doc_sentiment: {
             neutral: 0.7,
