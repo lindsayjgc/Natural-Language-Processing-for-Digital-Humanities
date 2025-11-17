@@ -23,13 +23,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,7 +35,6 @@ export default function DocumentDetailPage() {
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sentenceLimit, setSentenceLimit] = useState<number>(25);
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -188,10 +180,10 @@ export default function DocumentDetailPage() {
                   {document.status === "completed" && stats && (
                     <>
                       <Badge variant="outline" className="font-normal">
-                        {stats.vocab_size.toLocaleString()} words
+                        {stats.vocab_size.toLocaleString()} unique words
                       </Badge>
                       <Badge variant="outline" className="font-normal">
-                        {stats.token_count.toLocaleString()} tokens
+                        {stats.word_count.toLocaleString()} total words
                       </Badge>
                       <Badge variant="outline" className="font-normal">
                         {(stats.type_token_ratio * 100).toFixed(2)}% lexical
@@ -648,38 +640,17 @@ export default function DocumentDetailPage() {
                   stats.sentence_sentiment.length > 0 && (
                     <Card>
                       <CardHeader className="p-6 pb-4">
-                        <div className="flex items-center justify-between gap-4 mb-2">
-                          <div className="flex items-center gap-2">
-                            <MessageSquare className="h-5 w-5 text-primary" />
-                            <CardTitle>Sentence Analysis</CardTitle>
-                          </div>
-                          <Select
-                            value={sentenceLimit.toString()}
-                            onValueChange={(value) =>
-                              setSentenceLimit(Number(value))
-                            }
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue placeholder="Show" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="10">Top 10</SelectItem>
-                              <SelectItem value="25">Top 25</SelectItem>
-                              <SelectItem value="50">Top 50</SelectItem>
-                              <SelectItem value="100">Top 100</SelectItem>
-                              <SelectItem
-                                value={stats.sentence_sentiment.length.toString()}
-                              >
-                                All ({stats.sentence_sentiment.length})
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-5 w-5 text-primary" />
+                          <CardTitle>Sentence Analysis</CardTitle>
+                          <span className="text-sm text-muted-foreground ml-auto">
+                            {stats.sentence_sentiment.length} sentences
+                          </span>
                         </div>
                       </CardHeader>
-                                                              <CardContent className="p-4">
-                      <div className="space-y-1.5">
+                      <CardContent className="p-4">
+                      <div className="divide-y divide-border">
                         {stats.sentence_sentiment
-                          .slice(0, sentenceLimit)
                           .map((item, index) => {
                             const percentage = item.score * 100;
                             const emotionKey = item.emotion.toLowerCase().replace(/_/g, " ");
@@ -714,26 +685,20 @@ export default function DocumentDetailPage() {
                               return (
                                 <div
                                   key={`sentence-${index}`}
-                                  className="p-2.5 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                                  className="py-3 first:pt-0 last:pb-0"
                                 >
-                                  <div className="flex items-center gap-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm text-foreground leading-relaxed flex-1">
+                                      {item.sentence}
+                                    </p>
                                     <span className={`text-xs font-medium capitalize shrink-0 px-2 py-1 rounded-full text-foreground ${colors.bg}`}>
                                       {emotionKey} {percentage.toFixed(1)}%
                                     </span>
-                                    <p className="text-sm text-foreground leading-relaxed line-clamp-2 flex-1">
-                                      {item.sentence}
-                                    </p>
                                   </div>
                                 </div>
                               );
                             })}
                       </div>
-                        {stats.sentence_sentiment.length > sentenceLimit && (
-                          <div className="mt-4 text-sm text-muted-foreground text-center">
-                            Showing top {sentenceLimit} of{" "}
-                            {stats.sentence_sentiment.length} sentences
-                          </div>
-                        )}
                       </CardContent>
                     </Card>
                   )}

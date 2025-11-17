@@ -92,33 +92,35 @@ export function aggregateStats(documents: Array<{ stats: DocumentStats }>): Aggr
   for (const { stats } of documents) {
     if (!stats) continue;
     
-    // Sum tokens
-    const docTokens = stats.token_count || 0;
-    totalTokens += docTokens;
-    totalWeightedTokens += docTokens;
+    // Sum words
+    const docWords = stats.word_count || 0;
+    totalTokens += docWords;
+    totalWeightedTokens += docWords;
     
-    // Sum sentences (from sentence_sentiment if available)
+    // Sum sentences (from sentence_sentiment if available, or use sentence_count)
     if (stats.sentence_sentiment && stats.sentence_sentiment.length > 0) {
       totalSentences += stats.sentence_sentiment.length;
       // Collect sentence sentiments
       allSentenceSentiments.push(...stats.sentence_sentiment);
+    } else if (stats.sentence_count) {
+      totalSentences += stats.sentence_count;
     } else {
-      // Estimate: average 15 tokens per sentence
-      totalSentences += Math.max(1, Math.round(docTokens / 15));
+      // Estimate: average 15 words per sentence
+      totalSentences += Math.max(1, Math.round(docWords / 15));
     }
     
-    // Estimate characters from token count
+    // Estimate characters from word count
     // Average word length is ~5 characters, plus spaces between words
-    // Estimate: (average_word_length * token_count) + (token_count - 1) for spaces
-    // Simplified: ~5.5 characters per token on average (including spaces)
-    totalCharacters += Math.round(docTokens * 5.5);
+    // Estimate: (average_word_length * word_count) + (word_count - 1) for spaces
+    // Simplified: ~5.5 characters per word on average (including spaces)
+    totalCharacters += stats.char_count || Math.round(docWords * 5.5);
     
-    // Aggregate sentiment (weighted by token count)
-    if (stats.doc_sentiment && docTokens > 0) {
+    // Aggregate sentiment (weighted by word count)
+    if (stats.doc_sentiment && docWords > 0) {
       for (const [emotion, score] of Object.entries(stats.doc_sentiment)) {
         if (typeof score === "number" && isFinite(score)) {
-          sentimentSums[emotion] = (sentimentSums[emotion] || 0) + (score * docTokens);
-          sentimentWeights[emotion] = (sentimentWeights[emotion] || 0) + docTokens;
+          sentimentSums[emotion] = (sentimentSums[emotion] || 0) + (score * docWords);
+          sentimentWeights[emotion] = (sentimentWeights[emotion] || 0) + docWords;
         }
       }
     }
@@ -210,10 +212,9 @@ export function aggregateStats(documents: Array<{ stats: DocumentStats }>): Aggr
   // Convert POS count map to object
   const posCounts: Record<string, number> = Object.fromEntries(posCountMap.entries());
 
-  // Sort sentence sentiments by score (descending) and limit to top 100
+  // Sort sentence sentiments by score (descending) - show all sentences
   const sortedSentenceSentiments = allSentenceSentiments
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 100);
+    .sort((a, b) => b.score - a.score);
 
   return {
     totalTokens,
