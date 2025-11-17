@@ -87,7 +87,8 @@ export const authApi = {
 
     // Create abort controller for timeout (fallback for older browsers)
     const controller = new AbortController();
-    let timeoutId: number | null = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    // Use ReturnType<typeof setTimeout> to handle both Node.js and browser environments
+    let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/me`, {
