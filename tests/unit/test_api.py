@@ -14,6 +14,16 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from services.api.api import app
+from services.api.auth import get_current_user
+
+
+def override_get_current_user():
+    """Override authentication for testing"""
+    return "test_user_123"
+
+
+# Override the dependency for testing
+app.dependency_overrides[get_current_user] = override_get_current_user
 
 
 class TestAPI:
@@ -117,7 +127,6 @@ class TestAPI:
 
         response = client.post(
             "/documents/upload",
-            data={"user_id": "user123"},
             files={"file": ("test.txt", test_content, "text/plain")},
         )
 
@@ -134,23 +143,31 @@ class TestAPI:
         client = TestClient(app)
         response = client.post(
             "/documents/upload",
-            data={"user_id": "user123"},
             files={"file": ("", "", "text/plain")},  # Empty filename
         )
 
-        assert response.status_code == 422  # FastAPI validation error
+        assert response.status_code == 422  # Validation error - empty file rejected before auth check
 
     def test_upload_document_no_user_id(self):
-        """Test uploading without user_id should return 422"""
+        """Test uploading without user authentication - user_id now comes from JWT"""
         client = TestClient(app)
         test_content = "This is a test document."
+
+        # Remove the auth override temporarily to test no authentication
+        original_override = app.dependency_overrides.get(get_current_user)
+        if get_current_user in app.dependency_overrides:
+            del app.dependency_overrides[get_current_user]
 
         response = client.post(
             "/documents/upload",
             files={"file": ("test.txt", test_content, "text/plain")},
         )
 
-        assert response.status_code == 422  # Validation error
+        # Restore the auth override
+        if original_override:
+            app.dependency_overrides[get_current_user] = original_override
+
+        assert response.status_code == 403  # Authentication required
 
     @patch("services.api.api.get_user_documents")
     def test_objectid_serialization_in_response(self, mock_get_user_documents):
@@ -222,13 +239,12 @@ class TestAPI:
         # Test with empty file
         response = client.post(
             "/documents/upload",
-            data={"user_id": "user123"},
             files={"file": ("", "", "text/plain")},
         )
 
         assert response.status_code == 422
         data = response.json()
-        # FastAPI validation errors have 'detail' field
+        # Validation errors have 'detail' field
         assert "detail" in data
 
     @patch("services.api.api.create_document")
@@ -261,7 +277,6 @@ class TestAPI:
 
         response = client.post(
             "/documents/upload",
-            data={"user_id": "user123"},
             files={"file": ("large_test.txt", large_content, "text/plain")},
         )
 
@@ -299,7 +314,6 @@ class TestAPI:
 
         response = client.post(
             "/documents/upload",
-            data={"user_id": "user123"},
             files={"file": ("tëst_fîlé_ñame.txt", test_content, "text/plain")},
         )
 
