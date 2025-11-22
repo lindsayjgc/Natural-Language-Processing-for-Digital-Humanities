@@ -1,0 +1,6 @@
+app = "litlens-api"
+[[services]]
+  internal_port = 8000
+  protocol = "tcp"
+[deploy]
+  release_command = "./scripts/start-backend.sh"
