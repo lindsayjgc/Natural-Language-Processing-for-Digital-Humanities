@@ -99,7 +99,7 @@ export function UploadCard({
             or click to browse your computer
             <br />
             <span className="text-sm text-gray-500 mt-2 block">
-              Supported formats: .txt, .docx, .doc, .pdf, .rtf
+              Supported formats: .txt, .docx, .pdf, .rtf
             </span>
           </div>
           <Button

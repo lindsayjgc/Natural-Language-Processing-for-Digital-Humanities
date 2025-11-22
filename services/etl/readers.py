@@ -1,6 +1,7 @@
 # usage: robust text reader for .txt/.docx/.doc/.rtf/.pdf
 import zipfile, html, re
 from pathlib import Path
+from pypdf import PdfReader
 
 # Optional accelerators/backends (gracefully degrade if missing)
 try:
@@ -8,21 +9,10 @@ try:
 except Exception:
     docx2txt = None
 
-_DOCX_OK = False
 try:
-    import docx as _py_docx             # python-docx fallback
-    _DOCX_OK = True
+    import docx as _py_docx
 except Exception:
     _py_docx = None
-    _DOCX_OK = False
-
-_TEXTRACT_OK = False
-try:
-    import textract                     # catch-all for legacy .doc/.pdf (if installed)
-    _TEXTRACT_OK = True
-except Exception:
-    textract = None
-    _TEXTRACT_OK = False
 
 def _read_txt(p: Path) -> str:
     """Try common encodings; fall back to 'ignore' decoding to salvage bytes."""
@@ -41,6 +31,16 @@ def _read_docx_with_python_docx(p: Path) -> str:
     """Secondary .docx path using python-docx (preserves paragraph structure)."""
     d = _py_docx.Document(str(p))
     return "\n".join(par.text for par in d.paragraphs)
+
+def _read_pdf_with_pypdf(p: Path) -> str:
+    reader = PdfReader(str(p))
+    out = []
+    for page in reader.pages:
+        text = page.extract_text()
+        if text:
+            out.append(text)
+    return "\n".join(out)
+
 
 def _read_docx_by_zip(p: Path) -> str:
     """
@@ -81,7 +81,7 @@ def _sniff_kind(p: Path) -> str:
     Used to route edge-case .docx files to the right reader.
     """
     with open(p, "rb") as f:
-        head = f.read(8)
+        head = f.read(32)
     if head.startswith(b"PK"):
         return "docx_zip"
     if head.startswith(b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"):
@@ -97,9 +97,9 @@ def read_text_smart(path: Path) -> str:
     Read text from a variety of formats with graceful degradation:
       - .txt/.md/.rst → open with encoding fallbacks
       - .docx → docx2txt → python-docx → raw-zip parse
-      - .doc  → textract if available, else raise
+      - .doc  → raise error (legacy format)
       - .rtf  → simple RTF stripper
-      - .pdf  → textract if available, else raise
+      - .pdf  → pypdf if available, else raise
       - else  → treat as plain text
 
     Raises:
@@ -119,8 +119,8 @@ def read_text_smart(path: Path) -> str:
             # Actually not a standard docx zip (e.g., RTF renamed .docx)
             if kind == "rtf":
                 return _read_rtf_simple(p)
-            if kind == "ole_doc" and _TEXTRACT_OK:
-                return textract.process(str(p)).decode("utf-8", "ignore")
+            if kind == "ole_doc":
+                raise RuntimeError("Legacy .doc detected. Please convert to .txt/.docx.")
             return _read_txt(p)
         # Standard .docx zip → attempt readers in order of robustness
         try:
@@ -128,18 +128,16 @@ def read_text_smart(path: Path) -> str:
                 return _read_docx_with_docx2txt(p)
         except Exception:
             pass
-        if _DOCX_OK:
+        if _py_docx is not None:
             try:
                 return _read_docx_with_python_docx(p)
             except Exception:
                 pass
         return _read_docx_by_zip(p)
 
-    # Legacy .doc via textract only
+    # Legacy .doc raises error
     if suf == ".doc":
-        if _TEXTRACT_OK:
-            return textract.process(str(p)).decode("utf-8", "ignore")
-        raise RuntimeError("Legacy .doc detected. Install `textract` or convert to .txt/.docx.")
+        raise RuntimeError("Legacy .doc detected. Please convert to .txt/.docx.")
 
     # RTF simple decoder
     if suf == ".rtf":
@@ -147,9 +145,7 @@ def read_text_smart(path: Path) -> str:
 
     # PDF via textract (no built-in parser here)
     if suf == ".pdf":
-        if _TEXTRACT_OK:
-            return textract.process(str(p)).decode("utf-8", "ignore")
-        raise RuntimeError("PDF detected. Install `textract` or convert to .txt.")
+        return _read_pdf_with_pypdf(p)
 
     # Default: attempt to read as text
     return _read_txt(p)
