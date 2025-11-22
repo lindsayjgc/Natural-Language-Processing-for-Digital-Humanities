@@ -93,7 +93,7 @@ show_usage() {
 
 # Main installation function
 main() {
-    local auto_yes=false
+    local auto_yes=true
     local skip_mongodb=false
     local skip_nltk=false
     local skip_spacy=false
