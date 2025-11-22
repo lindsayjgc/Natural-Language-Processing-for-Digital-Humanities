@@ -93,7 +93,7 @@ show_usage() {
 
 # Main installation function
 main() {
-    local auto_yes=false
+    local auto_yes=true
     local skip_mongodb=false
     local skip_nltk=false
     local skip_spacy=false
@@ -233,9 +233,27 @@ main() {
     if [ "$skip_nltk" = false ]; then
         print_step "4/8 Downloading NLTK data packages..."
 
+        print_info "Configuring SSL certificates for Python..."
+        python -c "
+import sys, ssl, platform, subprocess, os
+try:
+    # macOS: run Install Certificates.command if present
+    if platform.system() == 'Darwin':
+        cert_cmd = f'/Applications/Python {sys.version_info.major}.{sys.version_info.minor}/Install Certificates.command'
+        if os.path.exists(cert_cmd):
+            subprocess.call([cert_cmd])
+
+    # Force Python to use certifi on all platforms
+    import certifi
+    ssl._create_default_https_context = ssl.create_default_context(cafile=certifi.where())
+except Exception as e:
+    print(f'Warning: SSL certificate configuration failed: {e}')
+"
+
         print_info "Downloading required NLTK packages..."
         python -c "
-import nltk
+import nltk, time
+
 packages = [
     'punkt_tab',
     'stopwords',
@@ -245,12 +263,20 @@ packages = [
     'maxent_ne_chunker',
     'words'
 ]
+
 for package in packages:
-    try:
-        nltk.download(package, quiet=True)
-        print(f'Downloaded {package}')
-    except Exception as e:
-        print(f'Warning: Failed to download {package}: {e}')
+    retries = 3
+    for attempt in range(retries):
+        try:
+            nltk.download(package, quiet=True)
+            print(f'Downloaded {package}')
+            break
+        except Exception as e:
+            print(f'Warning: Failed to download {package} (attempt {attempt+1}/{retries}): {e}')
+            if attempt < retries - 1:
+                time.sleep(2)
+            else:
+                print(f'ERROR: Could not download {package}')
 "
         print_success "NLTK data packages downloaded"
     else
