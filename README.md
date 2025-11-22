@@ -4,6 +4,33 @@ A full-stack application for analyzing literary and historical texts using Natur
 
 ## 🚀 Quick Start
 
+### 🐳 Docker (Recommended)
+
+The fastest way to get started is with Docker:
+
+```bash
+# Clone and navigate
+git clone <repository-url>
+cd Natural-Language-Processing-for-Digital-Humanities
+
+# Configure environment (copy and edit .env file)
+cp env.example .env
+# Edit .env with your MongoDB connection string and other settings
+
+# Start everything with Docker
+docker compose up -d --build
+
+# Open your browser
+# Frontend: http://localhost:3000
+# API Docs: http://localhost:8000/docs
+```
+
+**That's it!** Both frontend and backend will be built and running in containers.
+
+### 🛠️ Local Development
+
+If you prefer to run services locally:
+
 ```bash
 # Clone and navigate
 git clone <repository-url>
@@ -30,6 +57,22 @@ pnpm dev
 
 ### 📝 Common Commands
 
+#### Docker Commands
+```bash
+# Start all services in containers
+docker compose up -d --build    # Build and start in background
+docker compose up               # Start with logs visible
+docker compose down             # Stop all services
+docker compose logs             # View logs from all services
+docker compose logs backend     # View backend logs only
+docker compose logs frontend    # View frontend logs only
+
+# Development with Docker
+docker compose up --build       # Rebuild and start (after code changes)
+docker compose restart          # Restart services without rebuilding
+```
+
+#### Local Development Commands
 ```bash
 # Setup & Development
 pnpm setup            # Complete project setup (first time only)
@@ -60,9 +103,23 @@ pnpm clean            # Clean dependencies and artifacts
 If you prefer to run setup manually:
 ```bash
 ./scripts/install.sh          # Install dependencies
-./scripts/start-dev.sh        # Start all services
+./scripts/start-dev.sh        # Start all services locally
 ./scripts/stop-dev.sh         # Stop all services
 ```
+
+### 🐳 Docker vs Local Development
+
+**Use Docker when:**
+- You want the fastest setup (no need to install Python, Node.js, etc.)
+- You're on a different OS or have environment conflicts
+- You want to test production-like builds
+- You prefer containerized development
+
+**Use Local Development when:**
+- You need faster iteration cycles during development
+- You want to use your local development tools
+- You prefer direct access to logs and debugging
+- You're working on the codebase extensively
 
 ---
 
@@ -152,6 +209,11 @@ This system allows researchers and students in digital humanities to:
 - **Tailwind CSS** - Utility-first CSS
 - **shadcn/ui** - Component library
 
+**Deployment & Infrastructure**
+- **Docker** - Containerized deployment
+- **Docker Compose** - Multi-service orchestration
+- **Multi-stage Builds** - Optimized container images
+
 ### System Components
 
 ```
@@ -164,8 +226,32 @@ This system allows researchers and students in digital humanities to:
 ├── data/             # Sample text corpus
 │   ├── literature/   # Literary texts
 │   └── history/      # Historical documents
-└── tests/            # Test suites
+├── tests/            # Test suites
+├── docker-compose.yml     # Docker orchestration
+├── Dockerfile.api         # Backend container definition
+└── Dockerfile.frontend    # Frontend container definition
 ```
+
+### 🐳 Docker Architecture
+
+The application uses a multi-container Docker setup:
+
+**Backend Container** (`Dockerfile.api`)
+- Python 3.11 slim base image
+- Multi-stage build for optimized image size
+- Pre-installed spaCy models and NLTK data
+- Runs FastAPI server on port 8000
+
+**Frontend Container** (`Dockerfile.frontend`)
+- Node.js 20 slim base image
+- Next.js standalone build for production
+- Runs on port 3000
+- Non-root user for security
+
+**Container Communication**
+- Frontend connects to backend via internal Docker network
+- Ports 3000 (frontend) and 8000 (backend) exposed to host
+- Environment variables for configuration
 
 
 ## 📚 Documentation
@@ -187,6 +273,34 @@ This system allows researchers and students in digital humanities to:
 ```
 
 ## 🔄 Development Workflow
+
+### 🐳 With Docker
+
+1. **Start development environment:**
+   ```bash
+   docker compose up --build
+   ```
+
+2. **Make changes to code:**
+   - Edit files in `services/api/` or `services/frontend/`
+   - Rebuild containers to see changes:
+   ```bash
+   docker compose up --build
+   ```
+
+3. **View logs:**
+   ```bash
+   docker compose logs -f          # All services
+   docker compose logs -f backend  # Backend only
+   docker compose logs -f frontend # Frontend only
+   ```
+
+4. **Stop when done:**
+   ```bash
+   docker compose down
+   ```
+
+### 🛠️ Local Development
 
 1. **Start development environment:**
    ```bash
@@ -210,10 +324,11 @@ This system allows researchers and students in digital humanities to:
 
 ### File Watching & Hot Reload
 
-- **Backend**: Uvicorn auto-reloads on Python file changes
-- **Frontend**: Next.js hot module replacement for instant updates
+- **Backend**: Uvicorn auto-reloads on Python file changes (local development)
+- **Frontend**: Next.js hot module replacement for instant updates (local development)
 - **Logs**: Real-time colored output shows both services
 - **Database**: MongoDB Atlas persists data between restarts
+- **Docker**: Requires rebuilding containers for code changes
 
 ## 🛠️ Development
 
@@ -268,11 +383,57 @@ services/
 
 ## 🌐 Deployment
 
-The application is designed for cloud deployment:
+The application supports multiple deployment options:
 
-- **Backend**: Deploy to Railway, Render, Fly.io, or cloud providers
-- **Frontend**: Deploy to Vercel (recommended) or Netlify
-- **Database**: MongoDB Atlas (already configured)
+### 🐳 Docker Deployment (Recommended)
+
+**Production Deployment**
+```bash
+# On your server
+git clone <repository-url>
+cd Natural-Language-Processing-for-Digital-Humanities
+cp env.example .env
+# Edit .env with production settings
+
+# Deploy with Docker
+docker compose up -d --build
+```
+
+**Cloud Deployment with Docker**
+- **DigitalOcean App Platform** - Deploy with Docker Compose
+- **AWS ECS/Fargate** - Container orchestration
+- **Google Cloud Run** - Serverless containers
+- **Azure Container Instances** - Managed containers
+
+### ☁️ Traditional Cloud Deployment
+
+**Backend Options**
+- **Railway** - Deploy to Railway with Dockerfile.api
+- **Render** - Docker-based backend deployment
+- **Fly.io** - Global app deployment
+- **Heroku** - Container registry deployment
+
+**Frontend Options**
+- **Vercel** (recommended) - Next.js optimized deployment
+- **Netlify** - Static site deployment
+- **AWS Amplify** - Full-stack deployment
+
+**Database**
+- **MongoDB Atlas** (already configured) - Cloud database
+
+### 📦 Container Registry
+
+For production deployments, push images to a registry:
+
+```bash
+# Build and tag images
+docker build -f Dockerfile.api -t your-registry/nlp-backend:latest .
+docker build -f Dockerfile.frontend -t your-registry/nlp-frontend:latest .
+
+# Push to registry
+docker push your-registry/nlp-backend:latest
+docker push your-registry/nlp-frontend:latest
+```
 
 See individual service READMEs for deployment-specific instructions.
 
@@ -293,6 +454,18 @@ Full API documentation: [API_DOCS.md](./services/api/API_DOCS.md)
 
 ## 🛠️ Troubleshooting
 
+### Docker Issues
+
+| Problem | Solution |
+|---------|----------|
+| **Docker containers won't start** | Check if `.env` file exists and has required variables |
+| **Port already in use** | `docker compose down` then `docker compose up` |
+| **Build failures** | `docker compose build --no-cache` to rebuild from scratch |
+| **Container logs show errors** | `docker compose logs [service-name]` to debug |
+| **Database connection fails** | Verify MongoDB Atlas connection string in `.env` |
+
+### Local Development Issues
+
 | Problem | Solution |
 |---------|----------|
 | **Script permission denied** | `chmod +x start-dev.sh stop-dev.sh install.sh` |
@@ -301,13 +474,34 @@ Full API documentation: [API_DOCS.md](./services/api/API_DOCS.md)
 | **Services won't start** | Check `.env` file and MongoDB connection |
 | **Frontend not loading** | Verify `NEXT_PUBLIC_API_URL` in `.env.local` |
 
+### Docker Commands for Debugging
+
+```bash
+# View running containers
+docker ps
+
+# Check container logs
+docker compose logs backend
+docker compose logs frontend
+
+# Execute commands inside containers
+docker compose exec backend bash
+docker compose exec frontend sh
+
+# Remove all containers and rebuild
+docker compose down
+docker system prune -a  # WARNING: Removes all unused containers/images
+docker compose up --build
+```
+
 > **Need more help?** See [SETUP.md](./SETUP.md) for detailed troubleshooting guide.
 
 ## 📈 Project Status
 
 ### ✅ What's Working
+- **🐳 Docker Support** - Full containerization with docker-compose
 - **Complete Installation System** - Automated setup with `./scripts/install.sh`
-- **Development Environment** - Easy start/stop with `./scripts/start-dev.sh` and `./scripts/stop-dev.sh`
+- **Development Environment** - Easy start/stop with scripts or Docker
 - **Full NLP Pipeline** - Sentiment analysis, vocabulary stats, n-grams, POS tagging
 - **Multi-format Support** - TXT, PDF, DOCX, RTF document processing
 - **Modern Web Interface** - React/Next.js frontend with real-time updates
@@ -315,6 +509,7 @@ Full API documentation: [API_DOCS.md](./services/api/API_DOCS.md)
 - **Remember Me Feature** - Extended session tokens (30 days) for convenience
 - **Cloud Database** - MongoDB Atlas integration for data persistence
 - **API Documentation** - Interactive API docs at `/docs`
+- **Production Ready** - Multi-stage Docker builds for optimized deployment
 
 ### 🚧 In Development
 - **Batch Processing** - Upload and analyze multiple documents simultaneously
@@ -334,15 +529,19 @@ See [Team Contract](./TEAM_CONTRACT.md) for team collaboration guidelines.
 
 ### Development Setup
 ```bash
-# Clone and setup
+# Docker (Recommended)
+git clone <repository-url>
+cd Natural-Language-Processing-for-Digital-Humanities
+cp env.example .env  # Edit with your settings
+docker compose up --build
+
+# Local Development
 git clone <repository-url>
 cd Natural-Language-Processing-for-Digital-Humanities
 ./scripts/install.sh
-
-# Start developing
 ./scripts/start-dev.sh
 
-# Run tests
+# Run tests (local development)
 ./venv311/bin/python -m pytest tests/ -v
 ```
 
