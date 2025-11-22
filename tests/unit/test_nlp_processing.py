@@ -63,7 +63,7 @@ class TestNLPProcessing:
                 )
 
                 # Processing should handle text with extra spaces
-                assert result["token_count"] > 0
+                assert result["word_count"] > 0
 
         finally:
             tmp_path.unlink()
@@ -93,14 +93,14 @@ class TestNLPProcessing:
 
                 # Verify results
                 assert "vocab_size" in result
-                assert "token_count" in result
+                assert "word_count" in result
                 assert "type_token_ratio" in result
                 assert "doc_sentiment" in result
                 assert "sentiment_method" in result
 
                 # Check reasonable values
                 assert result["vocab_size"] > 0
-                assert result["token_count"] > 0
+                assert result["word_count"] > 0
                 assert 0 <= result["type_token_ratio"] <= 1
 
                 # Check sentiment scores
@@ -199,7 +199,7 @@ class TestNLPProcessing:
                 )
 
                 # Should handle punctuation appropriately
-                assert result["token_count"] > 0
+                assert result["word_count"] > 0
                 assert result["vocab_size"] > 0
 
         finally:
@@ -228,7 +228,7 @@ class TestNLPProcessing:
                 )
 
                 # Should handle longer texts
-                assert result["token_count"] > 100  # At least 100 tokens
+                assert result["word_count"] > 100  # At least 100 words
                 assert result["vocab_size"] > 0  # Should have some vocabulary
 
         finally:

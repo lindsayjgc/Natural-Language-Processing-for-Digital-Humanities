@@ -30,3 +30,8 @@ python-multipart
 
 # Utility / CLI
 tqdm             # for progress display (optional but useful)
+
+# Testing
+pytest
+pytest-asyncio
+httpx           
