@@ -1,0 +1,45 @@
+# ---- Builder ----
+FROM node:20-slim AS builder
+
+WORKDIR /app/services/frontend
+RUN npm install -g pnpm
+
+# Copy package files
+COPY services/frontend/package.json services/frontend/pnpm-lock.yaml* ./
+
+RUN pnpm install
+
+# Copy frontend source
+COPY services/frontend ./
+
+# Disable Turbopack and use Webpack for more stable builds
+ENV NEXT_PRIVATE_TURBOPACK=false
+ENV NODE_ENV=production
+
+# Build Next.js app (standalone)
+RUN pnpm build
+
+# ---- Runtime ----
+FROM node:20-slim AS runner
+
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy standalone build
+COPY --from=builder --chown=nextjs:nodejs /app/services/frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/services/frontend/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/services/frontend/public ./public
+
+USER nextjs
+
+ENV PORT=3000
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+EXPOSE 3000
+
+CMD ["node", "server.js"]
