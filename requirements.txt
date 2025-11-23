@@ -2,28 +2,23 @@
 pandas
 numpy
 nltk
-pathlib
-argparse
-textwrap
-json
 
 # NLP
 spacy
 transformers
 torch
-en-core-web-sm  # required spaCy model
 sentencepiece   # required by many transformer tokenizers
 
-# Document I/O (optional but recommended for .doc/.pdf/.rtf support)
+# Document I/O (optional but recommended for .docx/.pdf/.rtf support)
 docx2txt
 python-docx
-textract  # Required for PDF and legacy .doc support
+pypdf  # Required for PDFs
 
 # API
 fastapi
 uvicorn[standard]
 python-multipart
-pymongo[srv]
+pymongo
 motor
 python-dotenv
 
@@ -35,3 +30,8 @@ python-multipart
 
 # Utility / CLI
 tqdm             # for progress display (optional but useful)
+
+# Testing
+pytest
+pytest-asyncio
+httpx           

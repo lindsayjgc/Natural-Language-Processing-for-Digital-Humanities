@@ -1,0 +1,35 @@
+# ---- Build stage ----
+FROM python:3.11-slim AS builder
+
+WORKDIR /app
+
+# OS deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt ./services/api/
+
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r services/api/requirements.txt
+
+# spaCy model
+RUN python -m spacy download en_core_web_sm
+
+# NLTK data
+RUN python -c "import nltk; [nltk.download(pkg, quiet=True) for pkg in ['punkt', 'punkt_tab','stopwords','wordnet','vader_lexicon','averaged_perceptron_tagger_eng','maxent_ne_chunker','words']]"
+
+# ---- Runtime stage ----
+FROM python:3.11-slim AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /usr/local /usr/local
+
+# Copy services
+COPY services/ ./services/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "services.api.api:app", "--host", "0.0.0.0", "--port", "8000"]
