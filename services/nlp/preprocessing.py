@@ -21,6 +21,7 @@ except Exception:
 import nltk
 for pkg, locator in [
     ("punkt", "tokenizers/punkt"),
+    ("punkt_tab", "tokenizers/punkt_tab"),
     ("stopwords", "corpora/stopwords"),
     ("wordnet", "corpora/wordnet"),
     ("averaged_perceptron_tagger", "taggers/averaged_perceptron_tagger"),
