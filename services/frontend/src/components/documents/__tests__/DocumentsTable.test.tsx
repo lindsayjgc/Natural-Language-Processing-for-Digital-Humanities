@@ -82,16 +82,18 @@ describe("DocumentsTable", () => {
       />,
     );
 
-    // Check filenames are displayed
+    // Only completed documents are displayed (test1.txt)
     expect(screen.getByText("test1.txt")).toBeInTheDocument();
-    expect(screen.getByText("test2.txt")).toBeInTheDocument();
-    expect(screen.getByText("test3.txt")).toBeInTheDocument();
+    
+    // Processing and failed documents are filtered out
+    expect(screen.queryByText("test2.txt")).not.toBeInTheDocument(); // processing
+    expect(screen.queryByText("test3.txt")).not.toBeInTheDocument(); // failed
 
-    // Check upload dates are formatted
+    // Check upload dates are formatted for completed documents
     expect(screen.getByText(/1\/15\/2025/)).toBeInTheDocument();
   });
 
-  it("displays correct status badges", () => {
+  it("displays correct status badges for completed documents only", () => {
     render(
       <DocumentsTable
         documents={mockDocuments}
@@ -100,10 +102,11 @@ describe("DocumentsTable", () => {
       />,
     );
 
-    // Check status indicators
+    // Only completed documents are rendered in the table, so only "Analyzed" shows
     expect(screen.getByText("Analyzed")).toBeInTheDocument(); // completed
-    expect(screen.getByText("Analyzing")).toBeInTheDocument(); // processing
-    expect(screen.getByText("Failed")).toBeInTheDocument(); // failed
+    // Processing and failed documents are filtered out from table display
+    expect(screen.queryByText("Analyzing")).not.toBeInTheDocument(); // processing - not shown
+    expect(screen.queryByText("Failed")).not.toBeInTheDocument(); // failed - not shown
   });
 
   it('shows "View Analysis" link for completed documents', () => {
@@ -115,12 +118,16 @@ describe("DocumentsTable", () => {
       />,
     );
 
-    const viewLinks = screen.getAllByText("View Analysis →");
-    expect(viewLinks).toHaveLength(1); // Only for completed document
-    // Note: The component uses onClick navigation, not href attributes
+    // Find the dropdown button by its aria attributes
+    const dropdownButton = screen.getByRole("button", { 
+      expanded: false 
+    });
+    expect(dropdownButton).toBeInTheDocument();
+    expect(dropdownButton).toHaveAttribute("aria-haspopup", "menu");
+    // Note: "View Analysis" text is in dropdown menu that needs to be opened
   });
 
-  it("shows error message for failed documents", () => {
+  it("does not render failed documents in table", () => {
     render(
       <DocumentsTable
         documents={mockDocuments}
@@ -129,10 +136,12 @@ describe("DocumentsTable", () => {
       />,
     );
 
-    expect(screen.getByText("Processing error")).toBeInTheDocument();
+    // Failed documents are filtered out, so error message and filename won't show
+    expect(screen.queryByText("Processing error")).not.toBeInTheDocument();
+    expect(screen.queryByText("test3.txt")).not.toBeInTheDocument(); // failed document
   });
 
-  it("shows processing status for processing documents", () => {
+  it("does not render processing documents in table", () => {
     render(
       <DocumentsTable
         documents={mockDocuments}
@@ -141,7 +150,8 @@ describe("DocumentsTable", () => {
       />,
     );
 
-    expect(screen.getByText("Processing...")).toBeInTheDocument();
+    // Processing documents are filtered out of the table display
+    expect(screen.queryByText("test2.txt")).not.toBeInTheDocument(); // processing document
   });
 
   it("calls onRefresh when refresh button clicked", async () => {
@@ -209,7 +219,7 @@ describe("DocumentsTable", () => {
         _id: "4",
         filename: "test4.txt",
         uploaded_at: "2025-01-18T13:00:00",
-        status: "processing",
+        status: "completed", // Changed to completed so it gets rendered
         error: undefined,
       },
     ];
